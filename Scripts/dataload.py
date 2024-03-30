@@ -26,6 +26,11 @@ def loadData(output_data, weather_data, housing, crisis):
 	cols_above_20 = [i for i in range(0, output_data[0].shape[1])]
 	cols_above_20.remove(1)
 	cols_above_20.remove(12)
+	cols_above_20.remove(19)
+	cols_above_20.remove(20)
+	cols_above_20.remove(22)
+	cols_above_20.remove(25)
+	cols_above_20.remove(27)
 	cols_above_20.remove(30)
 	cols_above_20.remove(31)
 
@@ -151,4 +156,27 @@ def loadData(output_data, weather_data, housing, crisis):
 		shelter_data_frames[shelter_id] = shelter_group
 		shelter_data_frames[shelter_id]['OCCUPANCY_DATE'] = pd.to_datetime(shelter_data_frames[shelter_id]['OCCUPANCY_DATE'])
 
+	big_data.reset_index(inplace=True)
+	big_data = big_data.drop(columns = ['index'])
+
 	return big_data, shelter_data_frames
+
+def prep_Data(df):
+
+	df = df.drop(columns = ['PROGRAM_ID', 'CAPACITY_TYPE', 'OCCUPANCY_RATE_BEDS', 'OCCUPANCY_RATE_ROOMS'])
+	grouped_capacity = df.groupby('OCCUPANCY_DATE')[['CAPACITY_ACTUAL_BED', 'CAPACITY_ACTUAL_ROOM']].sum()
+	grouped_occupied = df.groupby('OCCUPANCY_DATE')[['OCCUPIED_BEDS', 'OCCUPIED_ROOMS']].sum()
+
+	df = df.merge(grouped_capacity, on='OCCUPANCY_DATE', suffixes=('', '_TOTAL_CAPACITY'))
+	df = df.merge(grouped_occupied, on='OCCUPANCY_DATE', suffixes=('', '_TOTAL_OCCUPIED'))
+	df = df.drop(columns = ['CAPACITY_ACTUAL_BED', 'CAPACITY_ACTUAL_ROOM', 'OCCUPIED_BEDS', 'OCCUPIED_ROOMS'])
+	df = df.drop_duplicates()
+
+	df['TOTAL_OCCUPIED'] = df['OCCUPIED_BEDS_TOTAL_OCCUPIED'] + df['OCCUPIED_ROOMS_TOTAL_OCCUPIED']
+	df['TOTAL_CAPACITY'] = df['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY'] + df['CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY']
+	df['OCCUPIED_PERCENTAGE'] = 100 * df['TOTAL_OCCUPIED']/df['TOTAL_CAPACITY']
+	df = df.drop(columns = ['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY', 'CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY', 'OCCUPIED_BEDS_TOTAL_OCCUPIED', 'OCCUPIED_ROOMS_TOTAL_OCCUPIED', 'TOTAL_CAPACITY', 'TOTAL_OCCUPIED'])
+
+	print(df)
+
+	return df
