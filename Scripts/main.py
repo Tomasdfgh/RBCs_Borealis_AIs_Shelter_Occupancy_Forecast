@@ -1,6 +1,15 @@
 import dataload as dl
+import training as tr
+import model as md
+import torch
+import torch.nn as nn
 
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from copy import deepcopy as dc
+
+from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
 
@@ -62,5 +71,62 @@ if __name__ == "__main__":
 
 	df = dl.prep_Data(dataframe)
 
-	plt.plot(df['OCCUPANCY_DATE'], df['OCCUPIED_PERCENTAGE'])
+	df = df[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']]
+
+	n_steps = 7
+	batch_size = 16
+	lstm_df = dl.time_series_for_lstm(df, n_steps)
+
+	scaler = MinMaxScaler(feature_range = (-1, 1))
+	lstm_df = scaler.fit_transform(lstm_df)
+	X = dc(np.flip(lstm_df[:, 1:], axis = 1))
+	y = lstm_df[:, 0]
+
+	split_index = int(len(X) * 0.95)
+
+	X_train = X[:split_index]
+	X_test = X[split_index:]
+
+	y_train = y[:split_index]
+	y_test = y[split_index:]
+
+	X_train = X_train.reshape((-1, n_steps, 1))
+	X_test = X_test.reshape((-1, n_steps, 1))
+
+	y_train = y_train.reshape((-1, 1))
+	y_test = y_test.reshape((-1, 1))
+
+	X_train = torch.tensor(X_train).float()
+	y_train = torch.tensor(y_train).float()
+	X_test = torch.tensor(X_test).float()
+	y_test = torch.tensor(y_test).float()
+
+	train_dataset = dl.TimeSeriesDataset(X_train, y_train)
+	test_dataset = dl.TimeSeriesDataset(X_test, y_test)
+
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+
+	model = md.LSTM(1,4,1)
+
+	learning_rate = 0.001
+	num_epochs = 10
+	loss_function = nn.MSELoss()
+	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+	for epoch in range(num_epochs):
+	    tr.train_one_epoch(model,epoch, train_loader, loss_function, optimizer)
+	    tr.validate_one_epoch(model,epoch, test_loader, loss_function)
+
+
+	with torch.no_grad():
+	    predicted = model(X_train).numpy()
+
+	plt.plot(y_train, label='Actual Close')
+	plt.plot(predicted, label='Predicted Close')
+	plt.xlabel('Day')
+	plt.ylabel('Close')
+	plt.legend()
 	plt.show()
+	

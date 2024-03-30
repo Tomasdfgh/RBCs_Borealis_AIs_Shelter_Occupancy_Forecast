@@ -1,19 +1,31 @@
 import pandas as pd
 import numpy as np
+from copy import deepcopy as dc
+from torch.utils.data import Dataset
 
+class TimeSeriesDataset(Dataset):
+	def __init__(self, X, y):
+		self.X = X
+		self.y = y
+
+	def __len__(self):
+		return len(self.X)
+
+	def __getitem__(self, i):
+		return self.X[i], self.y[i]
 
 def load_csv_to_pandas(file_path):
-    try:
-        # Load CSV file into a pandas data_23Frame
-        df = pd.read_csv(file_path, header=0, low_memory=False, encoding='unicode_escape')
-        print("Number of rows in the data_23Frame:", file_path, len(df))
-        return df
-    except FileNotFoundError:
-        print(f"File '{file_path}' not found.")
-        return None
-    except Exception as e:
-        print("An error occurred:", str(e))
-        return None
+	try:
+		# Load CSV file into a pandas data_23Frame
+		df = pd.read_csv(file_path, header=0, low_memory=False, encoding='unicode_escape')
+		print("Number of rows in the data_23Frame:", file_path, len(df))
+		return df
+	except FileNotFoundError:
+		print(f"File '{file_path}' not found.")
+		return None
+	except Exception as e:
+		print("An error occurred:", str(e))
+		return None
 
 def loadData(output_data, weather_data, housing, crisis):
 
@@ -36,9 +48,9 @@ def loadData(output_data, weather_data, housing, crisis):
 
 	#Dropping irrelevant columns for datasets above 2020
 	for i in range(len(output_data)):
-	    output_data[i] = output_data[i].drop(columns = output_data[i].columns[cols_above_20])
-	    output_data[i]['OCCUPANCY_DATE'] = output_data[i]['OCCUPANCY_DATE'].astype(str)
-	    output_data[i]['OCCUPANCY_DATE'] =  pd.to_datetime(output_data[i]['OCCUPANCY_DATE'])
+		output_data[i] = output_data[i].drop(columns = output_data[i].columns[cols_above_20])
+		output_data[i]['OCCUPANCY_DATE'] = output_data[i]['OCCUPANCY_DATE'].astype(str)
+		output_data[i]['OCCUPANCY_DATE'] =  pd.to_datetime(output_data[i]['OCCUPANCY_DATE'])
 
 	#Joining the Output data together
 	big_data = output_data[0]
@@ -176,7 +188,19 @@ def prep_Data(df):
 	df['TOTAL_CAPACITY'] = df['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY'] + df['CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY']
 	df['OCCUPIED_PERCENTAGE'] = 100 * df['TOTAL_OCCUPIED']/df['TOTAL_CAPACITY']
 	df = df.drop(columns = ['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY', 'CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY', 'OCCUPIED_BEDS_TOTAL_OCCUPIED', 'OCCUPIED_ROOMS_TOTAL_OCCUPIED', 'TOTAL_CAPACITY', 'TOTAL_OCCUPIED'])
-
-	print(df)
-
 	return df
+
+def time_series_for_lstm(df, n_steps):
+
+	df = dc(df)
+	
+	df.set_index('OCCUPANCY_DATE', inplace=True)
+	
+	for i in range(1, n_steps+1):
+		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
+		
+	df.dropna(inplace=True)
+
+	lstm_data = df.to_numpy()
+	
+	return lstm_data
