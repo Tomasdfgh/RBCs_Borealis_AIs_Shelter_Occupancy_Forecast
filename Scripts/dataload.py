@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from copy import deepcopy as dc
 from torch.utils.data import Dataset
+import torch
+from torch.utils.data import DataLoader
 
 class TimeSeriesDataset(Dataset):
 	def __init__(self, X, y):
@@ -27,6 +29,35 @@ def load_csv_to_pandas(file_path):
 		print("An error occurred:", str(e))
 		return None
 
+#This function converts All dataset from csv files into one dataframe
+	#--Features include:
+	# Date
+	# Program_ID 				(Not Trainable Feature)
+	# CAPACITY_TYPE 			(Not Trainable Feature)
+	# CAPACITY_ACTUAL_BED 		(Part of output feature, raw numbers instead of percentage)
+	# OCCUPIED_BEDS				(Part of output feature, raw numbers instead of percentage)
+	# CAPACITY_ACTUAL_ROOM		(Part of output feature, raw numbers instead of percentage)
+	# OCCUPIED_ROOMS			(Part of output feature, raw numbers instead of percentage)
+
+	#Weather Features
+	# Max Temp
+	# Min Temp
+	# Mean Temp
+	# Heat Deg Days
+	# Total Precip
+	# Snow on Grind
+
+	#Housing Data
+	# Value
+
+	#Person in crisis data
+	# Overdose
+	# Person in Crisis
+	# Suicide-related
+
+	#Final Output
+	#OCCUPANCY_RATE_BEDS		(Output percentage)
+	#OCCUPANCY_RATE_ROOMS		(Output percentage)
 def loadData(output_data, weather_data, housing, crisis):
 
 	#-------Output Data-------#
@@ -173,6 +204,9 @@ def loadData(output_data, weather_data, housing, crisis):
 
 	return big_data, shelter_data_frames
 
+#This function takes the dataframe and combine all the shelter occupancy together. The idea is that
+#individual shelter's data needs to be added together into one big cohesive timeline to be trained on
+#From there, the model will then infer data on individual shelters.
 def prep_Data(df):
 
 	df = df.drop(columns = ['PROGRAM_ID', 'CAPACITY_TYPE', 'OCCUPANCY_RATE_BEDS', 'OCCUPANCY_RATE_ROOMS'])
@@ -190,17 +224,67 @@ def prep_Data(df):
 	df = df.drop(columns = ['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY', 'CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY', 'OCCUPIED_BEDS_TOTAL_OCCUPIED', 'OCCUPIED_ROOMS_TOTAL_OCCUPIED', 'TOTAL_CAPACITY', 'TOTAL_OCCUPIED'])
 	return df
 
-def time_series_for_lstm(df, n_steps):
+#This function converts takes in a df of just the 
+def time_series_for_lstm(df, n_steps, scaler, batch_size):
 
+	#Converting the df into a time series for lstm
 	df = dc(df)
-	
 	df.set_index('OCCUPANCY_DATE', inplace=True)
-	
 	for i in range(1, n_steps+1):
 		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
-		
 	df.dropna(inplace=True)
-
 	lstm_data = df.to_numpy()
 	
-	return lstm_data
+
+	#Converting the data into dataloader
+	lstm_data = scaler.fit_transform(lstm_data)
+	X = dc(np.flip(lstm_data[:, 1:], axis = 1))
+	y = lstm_data[:, 0]
+
+	split_index = int(len(X) * 0.95)
+
+	X_train = X[:split_index]
+	X_test = X[split_index:]
+
+	y_train = y[:split_index]
+	y_test = y[split_index:]
+
+	X_train = X_train.reshape((-1, n_steps, 1))
+	X_test = X_test.reshape((-1, n_steps, 1))
+
+	y_train = y_train.reshape((-1, 1))
+	y_test = y_test.reshape((-1, 1))
+
+	X_train = torch.tensor(X_train).float()
+	y_train = torch.tensor(y_train).float()
+	X_test = torch.tensor(X_test).float()
+	y_test = torch.tensor(y_test).float()
+
+	train_dataset = TimeSeriesDataset(X_train, y_train)
+	test_dataset = TimeSeriesDataset(X_test, y_test)
+
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+	return train_loader, test_loader, X_train, y_train
+
+#This function is for the UI. Pass a dataframe with date and output data into it, and return 
+def time_series_to_model_inputtable(df, n_steps):
+
+	#Converting the df into a time series for lstm
+	df = dc(df)
+	df.set_index('OCCUPANCY_DATE', inplace=True)
+	for i in range(1, n_steps+1):
+		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPANCY_RATE_ROOMS'].shift(i)
+	df.dropna(inplace=True)
+	lstm_data = df.to_numpy()
+	
+
+	#Converting the data into dataloader
+	X = dc(np.flip(lstm_data[:, 1:], axis = 1)).reshape((-1, n_steps, 1))
+	y = lstm_data[:, 0].reshape((-1, 1))
+
+	X = torch.tensor(X).float()
+	y = torch.tensor(y).float()
+
+	return X, y
