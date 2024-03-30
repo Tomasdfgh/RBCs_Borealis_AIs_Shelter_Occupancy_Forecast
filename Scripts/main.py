@@ -6,6 +6,9 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from copy import deepcopy as dc
+import random
 if __name__ == "__main__":
 
 	#Occupancy Rate (Output Data):
@@ -44,30 +47,60 @@ if __name__ == "__main__":
 	n_steps = 7
 	batch_size = 16
 	learning_rate = 0.001
-	num_epochs = 10
+	num_epochs = 100
 	loss_function = nn.MSELoss()
 
+	#Training Model
 	train_loader, test_loader, X_train, y_train = dl.time_series_for_lstm(df, n_steps, scaler, batch_size)
 	model = md.LSTM(1,4,1) 
 	optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 	model = tr.begin_training(model,num_epochs, train_loader, test_loader, loss_function, optimizer)
 
-	#print(iso_data[17671])
-	plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[16691][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_ROOMS']], n_steps)
 
+	#Inferring Data for All Shelters
 	with torch.no_grad():
-	    predicted = model(plot_x).numpy()
+		predicted = model(X_train).numpy()
 
-	# plt.plot(plot_y)
-	# plt.plot(predicted)
-	# plt.show()
-
-	with torch.no_grad():
-	    predicted = model(X_train).numpy()
+	predicted = dl.transform_back(predicted, n_steps, scaler)
+	y_train = dl.transform_back(y_train, n_steps, scaler)
 
 	plt.plot(y_train, label='Actual')
 	plt.plot(predicted, label='Predicted')
 	plt.xlabel('Day')
 	plt.ylabel('Close')
 	plt.legend()
+	plt.show()
+
+	#Inferring Data for random shelters
+	num_sq = 3
+	random_keys = random.sample(list(iso_data), num_sq ** 2)
+	fig, axs = plt.subplots(num_sq, num_sq, figsize=(10, 7))
+
+
+	for i in range(num_sq):
+		for j in range(num_sq):
+
+			shelter_index = random_keys[i * num_sq + j]  # Calculate the index from the 1D array
+			try:
+				if iso_data[shelter_index]['OCCUPANCY_RATE_ROOMS'].isna().all():
+					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_BEDS']], n_steps, scaler)
+				else:
+					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_ROOMS']], n_steps, scaler)
+
+				with torch.no_grad():
+					predicted_ = model(plot_x).numpy()
+
+				predicted_ = dl.transform_back(predicted_, n_steps, scaler)
+				plot_y = dl.transform_back(plot_y, n_steps, scaler)
+
+				axs[i, j].plot(plot_y)
+				axs[i, j].plot(predicted_)
+			
+			except:
+				print(shelter_index)
+				print(iso_data[shelter_index])
+
+
+
+	plt.tight_layout()
 	plt.show()

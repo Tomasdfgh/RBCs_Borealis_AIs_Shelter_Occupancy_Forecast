@@ -268,16 +268,18 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size):
 
 	return train_loader, test_loader, X_train, y_train
 
-#This function is for the UI. Pass a dataframe with date and output data into it, and return 
-def time_series_to_model_inputtable(df, n_steps):
+#This function is for the UI. Pass a dataframe with date and output data into it, and it will return X where data can be inferred by the model and
+#y to be plotted directly as a comparison
+def time_series_to_model_inputtable(df, n_steps, scaler):
 
 	#Converting the df into a time series for lstm
 	df = dc(df)
 	df.set_index('OCCUPANCY_DATE', inplace=True)
 	for i in range(1, n_steps+1):
-		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPANCY_RATE_ROOMS'].shift(i)
+		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df[df.columns[-1]].shift(i)
 	df.dropna(inplace=True)
 	lstm_data = df.to_numpy()
+	lstm_data = scaler.fit_transform(lstm_data)
 	
 
 	#Converting the data into dataloader
@@ -288,3 +290,12 @@ def time_series_to_model_inputtable(df, n_steps):
 	y = torch.tensor(y).float()
 
 	return X, y
+
+def transform_back(data, n_steps, scaler):
+
+	dummies = np.zeros((data.shape[0], n_steps + 1))
+	dummies[:, 0] = data.flatten()
+	dummies = scaler.inverse_transform(dummies)
+	data = dc(dummies[:, 0])
+
+	return data
