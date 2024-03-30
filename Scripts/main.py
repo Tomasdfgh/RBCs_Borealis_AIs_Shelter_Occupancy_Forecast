@@ -11,6 +11,11 @@ from copy import deepcopy as dc
 import random
 if __name__ == "__main__":
 
+	#Work to be done:
+	# Figure out how to infer future data
+	# Clean this up, outsource a lot of this code to other scripts
+	# shelters with less than 5 data points will not work. Figure out a solution.
+
 	#Occupancy Rate (Output Data):
 	data_23 = r"C:\Users\tomng\Desktop\RBC's Borealis AI Lets Solve It\Datasets\daily-shelter-overnight-service-occupancy-capacity-2023.csv"
 	data_22 = r"C:\Users\tomng\Desktop\RBC's Borealis AI Lets Solve It\Datasets\daily-shelter-overnight-service-occupancy-capacity-2022.csv"
@@ -47,11 +52,12 @@ if __name__ == "__main__":
 	n_steps = 7
 	batch_size = 16
 	learning_rate = 0.001
-	num_epochs = 100
+	num_epochs = 20
+	train_test_split = 0.95
 	loss_function = nn.MSELoss()
 
 	#Training Model
-	train_loader, test_loader, X_train, y_train = dl.time_series_for_lstm(df, n_steps, scaler, batch_size)
+	train_loader, test_loader, X_train, y_train = dl.time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split)
 	model = md.LSTM(1,4,1) 
 	optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 	model = tr.begin_training(model,num_epochs, train_loader, test_loader, loss_function, optimizer)
@@ -74,6 +80,7 @@ if __name__ == "__main__":
 	#Inferring Data for random shelters
 	num_sq = 3
 	random_keys = random.sample(list(iso_data), num_sq ** 2)
+	print(random_keys)
 	fig, axs = plt.subplots(num_sq, num_sq, figsize=(10, 7))
 
 
@@ -83,9 +90,11 @@ if __name__ == "__main__":
 			shelter_index = random_keys[i * num_sq + j]  # Calculate the index from the 1D array
 			try:
 				if iso_data[shelter_index]['OCCUPANCY_RATE_ROOMS'].isna().all():
-					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_BEDS']], n_steps, scaler)
+					iso_data[shelter_index] = iso_data[shelter_index].rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], n_steps, scaler)
 				else:
-					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_ROOMS']], n_steps, scaler)
+					iso_data[shelter_index] = iso_data[shelter_index].rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], n_steps, scaler)
 
 				with torch.no_grad():
 					predicted_ = model(plot_x).numpy()
@@ -98,9 +107,9 @@ if __name__ == "__main__":
 			
 			except:
 				print(shelter_index)
-				print(iso_data[shelter_index])
-
-
 
 	plt.tight_layout()
 	plt.show()
+
+	#13671, 15251 failed
+	#plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[15791][['OCCUPANCY_DATE', 'OCCUPANCY_RATE_ROOMS']], n_steps, scaler)

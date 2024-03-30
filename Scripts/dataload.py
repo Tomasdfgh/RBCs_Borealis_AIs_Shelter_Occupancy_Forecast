@@ -225,7 +225,7 @@ def prep_Data(df):
 	return df
 
 #This function converts takes in a df of just the 
-def time_series_for_lstm(df, n_steps, scaler, batch_size):
+def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 
 	#Converting the df into a time series for lstm
 	df = dc(df)
@@ -233,15 +233,15 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size):
 	for i in range(1, n_steps+1):
 		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
 	df.dropna(inplace=True)
+
 	lstm_data = df.to_numpy()
-	
 
 	#Converting the data into dataloader
 	lstm_data = scaler.fit_transform(lstm_data)
 	X = dc(np.flip(lstm_data[:, 1:], axis = 1))
 	y = lstm_data[:, 0]
 
-	split_index = int(len(X) * 0.95)
+	split_index = int(len(X) * train_test_split)
 
 	X_train = X[:split_index]
 	X_test = X[split_index:]
@@ -272,15 +272,16 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size):
 #y to be plotted directly as a comparison
 def time_series_to_model_inputtable(df, n_steps, scaler):
 
-	#Converting the df into a time series for lstm
+
 	df = dc(df)
 	df.set_index('OCCUPANCY_DATE', inplace=True)
 	for i in range(1, n_steps+1):
-		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df[df.columns[-1]].shift(i)
+		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
 	df.dropna(inplace=True)
+
+
 	lstm_data = df.to_numpy()
 	lstm_data = scaler.fit_transform(lstm_data)
-	
 
 	#Converting the data into dataloader
 	X = dc(np.flip(lstm_data[:, 1:], axis = 1)).reshape((-1, n_steps, 1))
