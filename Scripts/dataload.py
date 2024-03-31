@@ -4,6 +4,7 @@ from copy import deepcopy as dc
 from torch.utils.data import Dataset
 import torch
 from torch.utils.data import DataLoader
+from sklearn.preprocessing import MinMaxScaler
 
 class TimeSeriesDataset(Dataset):
 	def __init__(self, X, y):
@@ -15,6 +16,10 @@ class TimeSeriesDataset(Dataset):
 
 	def __getitem__(self, i):
 		return self.X[i], self.y[i]
+
+def get_scaler():
+	scaler = MinMaxScaler(feature_range = (-1, 1))
+	return scaler
 
 def load_csv_to_pandas(file_path):
 	try:
@@ -66,16 +71,7 @@ def loadData(output_data, weather_data, housing, crisis):
 		output_data[i] = load_csv_to_pandas(output_data[i])
 
 	#Creating the list of columns to drop for datasets above 2020
-	cols_above_20 = [i for i in range(0, output_data[0].shape[1])]
-	cols_above_20.remove(1)
-	cols_above_20.remove(12)
-	cols_above_20.remove(19)
-	cols_above_20.remove(20)
-	cols_above_20.remove(22)
-	cols_above_20.remove(25)
-	cols_above_20.remove(27)
-	cols_above_20.remove(30)
-	cols_above_20.remove(31)
+	cols_above_20 = [i for i in range(output_data[0].shape[1]) if i not in [1, 12, 19, 20, 22, 25, 27, 30, 31]]
 
 	#Dropping irrelevant columns for datasets above 2020
 	for i in range(len(output_data)):
@@ -102,15 +98,7 @@ def loadData(output_data, weather_data, housing, crisis):
 		weather_data[i] = load_csv_to_pandas(weather_data[i])
 
 	#Creating the list of columns to drop for weather data
-	weather_cols = [i for i in range(0, weather_data[0].shape[1])]
-	weather_cols.remove(4)
-	weather_cols.remove(9)
-	weather_cols.remove(11)
-	weather_cols.remove(13)
-	weather_cols.remove(15)
-	weather_cols.remove(17)
-	weather_cols.remove(23)
-	weather_cols.remove(25)
+	weather_cols = [i for i in range(weather_data[0].shape[1]) if i not in [4, 9, 11, 13, 15, 17, 23, 25]]
 
 	#Dropping irrelevant columns for weather datasets
 	for i in range(len(weather_data)):
@@ -139,9 +127,7 @@ def loadData(output_data, weather_data, housing, crisis):
 	housing = load_csv_to_pandas(housing)
 
 	#Creating the list of columns to drop for housing
-	housing_cols = [i for i in range(0, housing.shape[1])]
-	housing_cols.remove(0)
-	housing_cols.remove(10)
+	housing_cols = [i for i in range(0, housing.shape[1]) if i not in [0, 10]]
 
 	#Dropping irrelevant columns for housing dataset
 	housing = housing[housing['GEO'] == 'Toronto, Ontario']
@@ -161,9 +147,7 @@ def loadData(output_data, weather_data, housing, crisis):
 	crisis = load_csv_to_pandas(crisis)
 
 	#Creating the list of columns to drop for crisis dataset
-	crisis_col = [i for i in range(0, crisis.shape[1])]
-	crisis_col.remove(2)
-	crisis_col.remove(7)
+	crisis_col = [i for i in range(0, crisis.shape[1]) if i not in [2, 7]]
 
 	crisis = crisis.drop(columns = crisis.columns[crisis_col])
 	crisis = crisis.rename(columns = {'EVENT_DATE': 'OCCUPANCY_DATE'})
@@ -233,14 +217,16 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	for i in range(1, n_steps+1):
 		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
 	df.dropna(inplace=True)
-
 	lstm_data = df.to_numpy()
+
+	#Getting the date column for graphing purposes
+	df.reset_index(inplace=True)
+	date_frame = df['OCCUPANCY_DATE']
 
 	#Converting the data into dataloader
 	lstm_data = scaler.fit_transform(lstm_data)
 	X = dc(np.flip(lstm_data[:, 1:], axis = 1))
 	y = lstm_data[:, 0]
-
 	split_index = int(len(X) * train_test_split)
 
 	X_train = X[:split_index]
@@ -266,12 +252,11 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-	return train_loader, test_loader, X_train, y_train
+	return train_loader, test_loader, X_train, y_train, X_test, y_test, date_frame
 
 #This function is for the UI. Pass a dataframe with date and output data into it, and it will return X where data can be inferred by the model and
 #y to be plotted directly as a comparison
 def time_series_to_model_inputtable(df, n_steps, scaler):
-
 
 	df = dc(df)
 	df.set_index('OCCUPANCY_DATE', inplace=True)
@@ -289,7 +274,6 @@ def time_series_to_model_inputtable(df, n_steps, scaler):
 
 	X = torch.tensor(X).float()
 	y = torch.tensor(y).float()
-
 	return X, y
 
 def transform_back(data, n_steps, scaler):
@@ -298,5 +282,4 @@ def transform_back(data, n_steps, scaler):
 	dummies[:, 0] = data.flatten()
 	dummies = scaler.inverse_transform(dummies)
 	data = dc(dummies[:, 0])
-
 	return data
