@@ -5,11 +5,25 @@ import plotting as pl
 
 import torch
 import torch.nn as nn
+
+import numpy as np
 if __name__ == "__main__":
 
 	#Work to be done:
 	# shelters with less than 7 data points will not work. Figure out a solution.
 	# Add plots for Training Errors
+
+	#These are the shelters that failed to match with their date frame, most likely due to inconsistent dates
+	#	13031
+	#	16131
+	#	16171
+	#	16194
+	#	16551
+	#	17131
+	#	17132
+	#	17171
+	#	17551
+	#Confirmed. Definitely due to inconsistent dates
 
 	#Long Term Work:
 	# Start Building Software
@@ -56,7 +70,7 @@ if __name__ == "__main__":
 	n_steps = 7
 	batch_size = 16
 	learning_rate = 0.001
-	num_epochs = 20
+	num_epochs = 50
 	train_test_split = 0.95
 	loss_function = nn.MSELoss()
 	optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
@@ -64,7 +78,7 @@ if __name__ == "__main__":
 	#Training Model
 	train_loader, test_loader, X_train, y_train, X_test, y_test, date_frame = dl.time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split)
 	
-	model = tr.begin_training(model,num_epochs, train_loader, test_loader, loss_function, optimizer)
+	model, training_loss, valid_loss, avg_valid_loss = tr.begin_training(model,num_epochs, train_loader, test_loader, loss_function, optimizer)
 
 	#------Post Training Analysis------#
 
@@ -73,11 +87,15 @@ if __name__ == "__main__":
 		if iso_data[i].shape[0] <= n_steps - 1:
 			del iso_data[i]
 
-	#Flags to indicate plotting
-	plot_general = True
-	plot_random = True
-	plot_errors = True
+	#Temporary Measure: Removing all shelters where dates are not working
+	for i in [13031, 16131, 16171, 16194, 16551, 17131, 17132, 17171, 17551]:
+		del iso_data[i]
 
+
+	#Flags to indicate plotting
+	plot_general = False
+	plot_random = False
+	plot_errors = False
 
 	#Inferring Data for All Shelters
 	if plot_general:
@@ -87,3 +105,9 @@ if __name__ == "__main__":
 	if plot_random:
 		num_sq = 3
 		pl.plot_random_shelters(iso_data, model, num_sq, n_steps, scaler)
+
+	if plot_errors:
+		pl.plot_errors(training_loss, valid_loss, avg_valid_loss)
+
+
+	dl.infer_future_dates(df, model, n_steps, 200, scaler)

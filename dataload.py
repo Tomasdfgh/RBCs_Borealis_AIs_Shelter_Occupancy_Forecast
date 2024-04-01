@@ -6,6 +6,15 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
+
+import matplotlib.pyplot as plt
+
+#Turn this on to see the numpy array in full instead of partially
+print_all = False
+if print_all:
+	import sys
+	np.set_printoptions(threshold=sys.maxsize)
+
 class TimeSeriesDataset(Dataset):
 	def __init__(self, X, y):
 		self.X = X
@@ -238,6 +247,8 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	X_train = X_train.reshape((-1, n_steps, 1))
 	X_test = X_test.reshape((-1, n_steps, 1))
 
+	print(X_train.shape)
+
 	y_train = y_train.reshape((-1, 1))
 	y_test = y_test.reshape((-1, 1))
 
@@ -264,7 +275,6 @@ def time_series_to_model_inputtable(df, n_steps, scaler):
 		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
 	df.dropna(inplace=True)
 
-
 	lstm_data = df.to_numpy()
 	lstm_data = scaler.fit_transform(lstm_data)
 
@@ -283,3 +293,45 @@ def transform_back(data, n_steps, scaler):
 	dummies = scaler.inverse_transform(dummies)
 	data = dc(dummies[:, 0])
 	return data
+
+#Function to check if there are any missing dates in the individual data Return True if missing, and False if not
+def check_consistent_dates(df):
+    # Convert date column to DateTimeIndex and sort the DataFrame
+    df['OCCUPANCY_DATE'] = pd.to_datetime(df['OCCUPANCY_DATE'])
+    df = df.sort_values('OCCUPANCY_DATE').reset_index(drop=True)
+    
+    # Calculate the expected range of dates
+    min_date = df['OCCUPANCY_DATE'].min()
+    max_date = df['OCCUPANCY_DATE'].max()
+    expected_dates = pd.date_range(start=min_date, end=max_date)
+    
+    # Check for any missing dates
+    missing_dates = expected_dates[~expected_dates.isin(df['OCCUPANCY_DATE'])]
+    
+    if len(missing_dates) == 0:
+        return False
+    else:
+    	return True
+
+
+def infer_future_dates(df, model, n_steps, future_time, scaler):
+
+	#Rescale and shape the data into a model passable format
+	data = torch.tensor(scaler.fit_transform(np.array(df['OCCUPIED_PERCENTAGE']).reshape(-1, 1)).reshape((-1, df.shape[0], 1))).float()
+	for i in range(future_time):
+		y = model(data).unsqueeze(0)
+		data = torch.cat((data, y), dim = 1)
+	data = scaler.inverse_transform(data.squeeze().detach().numpy().reshape(-1, 1)).flatten()
+	x_1 = [i for i in range(df['OCCUPIED_PERCENTAGE'].shape[0])]
+	x_2 = [i for i in range(data.shape[0])]
+
+	plt.plot(x_1, df['OCCUPIED_PERCENTAGE'], label = 'Actual')
+	plt.plot(x_2, data, label = 'Predicted')
+	plt.legend()
+	plt.show()
+
+
+	# date = df['OCCUPANCY_DATE'].max() - pd.Timedelta(days=n_steps)
+	# df = df[df['OCCUPANCY_DATE'] > date]
+	# min_date = df['OCCUPANCY_DATE'].min()
+
