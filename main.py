@@ -9,28 +9,21 @@ import torch.nn as nn
 import numpy as np
 if __name__ == "__main__":
 
+	#Do these first, in this order!
+	#1)Finish the inferring future data feature.																Done
+	#2)Use this new feature and incorporate it into the plot_random_shelters function.							Done
+	#  Do it so that so that you can divide the dataset into before and after to infer data.
+	#3)Add in a testing set error. May need to rework a lot of the structure of the pipeline. Think about it.	
+	#  But this needs to be done for better analysis
+	#4)Start working on adding in additional features to the model
+
 	#Work to be done:
 	# shelters with less than 7 data points will not work. Figure out a solution.
 	# Add plots for Training Errors
-
-	#These are the shelters that failed to match with their date frame, most likely due to inconsistent dates
-	#	13031
-	#	16131
-	#	16171
-	#	16194
-	#	16551
-	#	17131
-	#	17132
-	#	17171
-	#	17551
-	#Confirmed. Definitely due to inconsistent dates
+	# Test the 100 output options instead of 1 to create a distribution and test which one is more likely
 
 	#Long Term Work:
 	# Start Building Software
-	# Figure out how to infer future data
-		#Sub steps:
-		#Build time-series function that takes in model input and feed it back into the time series. You have to experiment
-		#Incorporate that into a function with one of the parameter being how many days into the future to predict
 
 	#Occupancy Rate (Output Data):
 	data_23 = r"C:\Users\tomng\Desktop\RBC's Borealis AI Lets Solve It\Datasets\daily-shelter-overnight-service-occupancy-capacity-2023.csv"
@@ -60,19 +53,26 @@ if __name__ == "__main__":
 
 	#Initialize the scaler
 	scaler = dl.get_scaler()
+
+	#
 	df = dl.prep_Data(dataframe)
 	df = df[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']]
-
-	#Initialize Model
-	model = md.LSTM(1,4,1)
 
 	#Hyper parameters
 	n_steps = 7
 	batch_size = 16
 	learning_rate = 0.001
-	num_epochs = 50
-	train_test_split = 0.95
+	num_epochs = 5
+	train_test_split = 0.75
 	loss_function = nn.MSELoss()
+
+	#Model's Hyper Parameters
+	input_size = 1 
+	hidden_size = 4 
+	num_stacked_layers = 1
+
+	#Initialize Model and optimizers
+	model = md.LSTM(input_size, hidden_size, num_stacked_layers)
 	optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 	#Training Model
@@ -87,15 +87,10 @@ if __name__ == "__main__":
 		if iso_data[i].shape[0] <= n_steps - 1:
 			del iso_data[i]
 
-	#Temporary Measure: Removing all shelters where dates are not working
-	for i in [13031, 16131, 16171, 16194, 16551, 17131, 17132, 17171, 17551]:
-		del iso_data[i]
-
-
 	#Flags to indicate plotting
-	plot_general = False
-	plot_random = False
-	plot_errors = False
+	plot_general = True
+	plot_random = True
+	plot_errors = True
 
 	#Inferring Data for All Shelters
 	if plot_general:
@@ -104,10 +99,8 @@ if __name__ == "__main__":
 	#Plot Random Shelters
 	if plot_random:
 		num_sq = 3
-		pl.plot_random_shelters(iso_data, model, num_sq, n_steps, scaler)
+		per_ = 0.5
+		pl.plot_random_shelters(iso_data, model, num_sq, scaler, per_)
 
 	if plot_errors:
 		pl.plot_errors(training_loss, valid_loss, avg_valid_loss)
-
-
-	dl.infer_future_dates(df, model, n_steps, 200, scaler)

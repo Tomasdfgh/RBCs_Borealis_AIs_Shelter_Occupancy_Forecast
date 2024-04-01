@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 
 #Inferring Data for random shelters
-def plot_random_shelters(iso_data, model, num_sq, n_steps, scaler):
+def plot_random_shelters(iso_data, model, num_sq, scaler, per_):
 
 	model.train(False)
 	random_keys = random.sample(list(iso_data), num_sq ** 2)
@@ -14,30 +14,29 @@ def plot_random_shelters(iso_data, model, num_sq, n_steps, scaler):
 		for j in range(num_sq):
 
 			shelter_index = random_keys[i * num_sq + j]  # Calculate the index from the 1D array
+
+			#Preprocess the iso by copying it into local variables to avoid changing the iso_data itself
+			df_use = iso_data[shelter_index]
+			max_date = df_use['OCCUPANCY_DATE'].max()
+
+			if df_use['OCCUPANCY_RATE_ROOMS'].isna().all():
+				df_use = df_use.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+			else:
+				df_use = df_use.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+
+			#Isolate the data to non and inferring section
+			df_temp = df_use.head(int(len(iso_data[shelter_index]) * per_))
+			cut_date = df_temp['OCCUPANCY_DATE'].max()
+			df_before = df_use[df_use['OCCUPANCY_DATE'] < cut_date]
+
+			#Find the difference in date to get how many days to infer
+			date_diff = (max_date - cut_date).days + 1
+
 			try:
-				if iso_data[shelter_index]['OCCUPANCY_RATE_ROOMS'].isna().all():
-					iso_data[shelter_index] = iso_data[shelter_index].rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
-					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], n_steps, scaler)
-				
-				else:
-					iso_data[shelter_index] = iso_data[shelter_index].rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
-					plot_x, plot_y = dl.time_series_to_model_inputtable(iso_data[shelter_index][['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], n_steps, scaler)
+				df = dl.infer_future_dates(df_before, model, date_diff, scaler)
 
-				with torch.no_grad():
-					predicted_ = model(plot_x).numpy()
-
-				#Getting Y-axis values for actual and predicted
-				predicted_ = dl.transform_back(predicted_, n_steps, scaler)
-				plot_y = dl.transform_back(plot_y, n_steps, scaler)
-
-				#Getting X-axis values
-				date_frame = iso_data[shelter_index]['OCCUPANCY_DATE']
-				min_date = iso_data[shelter_index]['OCCUPANCY_DATE'].min()
-				new_date = min_date + pd.Timedelta(days=n_steps)
-				date_frame = date_frame[date_frame >= new_date]
-
-				axs[i, j].plot(date_frame, plot_y)
-				axs[i, j].plot(date_frame, predicted_)
+				axs[i, j].plot(df_use['OCCUPANCY_DATE'], df_use['OCCUPIED_PERCENTAGE'])
+				axs[i, j].plot(df['OCCUPANCY_DATE'], df['OCCUPIED_PERCENTAGE'])
 
 				#Labeling
 				axs[i, j].set_title(f'Shelter {shelter_index}')
@@ -126,5 +125,4 @@ def plot_random_shelters_test(iso_data, model, n_steps, scaler):
 		except Exception as e:
 			print(shelter_index)
 
-		
 		plt.cla()

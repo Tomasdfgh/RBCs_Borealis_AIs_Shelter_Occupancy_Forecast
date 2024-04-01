@@ -217,7 +217,7 @@ def prep_Data(df):
 	df = df.drop(columns = ['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY', 'CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY', 'OCCUPIED_BEDS_TOTAL_OCCUPIED', 'OCCUPIED_ROOMS_TOTAL_OCCUPIED', 'TOTAL_CAPACITY', 'TOTAL_OCCUPIED'])
 	return df
 
-#This function converts takes in a df of just the 
+#This function takes in a df and convert it to dataloader for training purposes
 def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 
 	#Converting the df into a time series for lstm
@@ -247,8 +247,6 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	X_train = X_train.reshape((-1, n_steps, 1))
 	X_test = X_test.reshape((-1, n_steps, 1))
 
-	print(X_train.shape)
-
 	y_train = y_train.reshape((-1, 1))
 	y_test = y_test.reshape((-1, 1))
 
@@ -267,6 +265,7 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 
 #This function is for the UI. Pass a dataframe with date and output data into it, and it will return X where data can be inferred by the model and
 #y to be plotted directly as a comparison
+#This function is now obsolete and no longer in use. I will still leave it here just in case
 def time_series_to_model_inputtable(df, n_steps, scaler):
 
 	df = dc(df)
@@ -313,8 +312,7 @@ def check_consistent_dates(df):
     else:
     	return True
 
-
-def infer_future_dates(df, model, n_steps, future_time, scaler):
+def infer_future_dates(df, model, future_time, scaler):
 
 	#Rescale and shape the data into a model passable format
 	data = torch.tensor(scaler.fit_transform(np.array(df['OCCUPIED_PERCENTAGE']).reshape(-1, 1)).reshape((-1, df.shape[0], 1))).float()
@@ -322,16 +320,17 @@ def infer_future_dates(df, model, n_steps, future_time, scaler):
 		y = model(data).unsqueeze(0)
 		data = torch.cat((data, y), dim = 1)
 	data = scaler.inverse_transform(data.squeeze().detach().numpy().reshape(-1, 1)).flatten()
-	x_1 = [i for i in range(df['OCCUPIED_PERCENTAGE'].shape[0])]
-	x_2 = [i for i in range(data.shape[0])]
 
-	plt.plot(x_1, df['OCCUPIED_PERCENTAGE'], label = 'Actual')
-	plt.plot(x_2, data, label = 'Predicted')
-	plt.legend()
-	plt.show()
+	#Adding a data column to the new data
+	max_date = df['OCCUPANCY_DATE'].max()
+	date_range = pd.date_range(start=max_date + pd.Timedelta(days= 1), end=max_date + pd.Timedelta(days=future_time), freq = 'D')
+	df_new = pd.DataFrame({'OCCUPANCY_DATE': date_range})
 
+	#Getting the newly generated portion of data
+	new_data = data[-future_time:]
+	new_data_df = pd.DataFrame(new_data, columns = ['OCCUPIED_PERCENTAGE'])
 
-	# date = df['OCCUPANCY_DATE'].max() - pd.Timedelta(days=n_steps)
-	# df = df[df['OCCUPANCY_DATE'] > date]
-	# min_date = df['OCCUPANCY_DATE'].min()
+	#Combined
+	df_new['OCCUPIED_PERCENTAGE'] = new_data_df
 
+	return df_new

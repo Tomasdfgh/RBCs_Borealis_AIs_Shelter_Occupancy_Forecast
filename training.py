@@ -7,6 +7,8 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
     validation_loss = []
     average_validation_loss = []
     for epoch in range(num_epochs):
+
+        #Training
         model.train(True)
         running_loss = 0
         print("Epoch: " + str(epoch))
@@ -14,6 +16,10 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
         for batch_index, batch in enumerate(train_loader):
             x_batch, y_batch = batch[0], batch[1]
             output = model(x_batch)
+
+            print("y: " + str(y_batch.shape))
+            print("x: " + str(x_batch.shape))
+
             loss_ = loss(output, y_batch)
             running_loss += loss_.item()
 
@@ -24,6 +30,8 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
 
         print("Training Loss: " + str(running_loss))
         training_loss.append(running_loss)
+
+        #Validating
         model.train(False)
         vad_loss = 0
 
@@ -42,5 +50,6 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
         print('Val Loss: {0:.3f}'.format(avg_loss_across_batches))
         print('***************************************************')
         print('\n')
+
 
     return model, training_loss, validation_loss, average_validation_loss
