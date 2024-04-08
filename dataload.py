@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 #Turn this on to see the numpy array in full instead of partially
-print_all = False
+print_all = True
 if print_all:
 	import sys
 	np.set_printoptions(threshold=sys.maxsize)
@@ -81,6 +81,131 @@ def loadData(output_data, weather_data, housing, crisis):
 
 	#Creating the list of columns to drop for datasets above 2020
 	cols_above_20 = [i for i in range(output_data[0].shape[1]) if i not in [1, 12, 19, 20, 22, 25, 27, 30, 31]]
+
+	#Dropping irrelevant columns for datasets above 2020
+	for i in range(len(output_data)):
+		output_data[i] = output_data[i].drop(columns = output_data[i].columns[cols_above_20])
+		output_data[i]['OCCUPANCY_DATE'] = output_data[i]['OCCUPANCY_DATE'].astype(str)
+		output_data[i]['OCCUPANCY_DATE'] =  pd.to_datetime(output_data[i]['OCCUPANCY_DATE'])
+
+	#Joining the Output data together
+	big_data = output_data[0]
+	for i in range(1,len(output_data)):
+		big_data = pd.concat([big_data, output_data[i]], ignore_index = True)
+
+	#Determine the max and min date in the dataset to create a date vector to fill out empty values
+	max_date = big_data['OCCUPANCY_DATE'].max()
+	min_date = big_data['OCCUPANCY_DATE'].min()
+	date_range = pd.date_range(start=min_date, end=max_date, freq = 'D')
+	date_df = pd.DataFrame({'OCCUPANCY_DATE': date_range})
+	#1, 11, 12 for 2020 and below
+
+	#-------Weather Data-------#
+
+	#loading up the links to the weather dataset
+	for i in range(len(weather_data)):
+		weather_data[i] = load_csv_to_pandas(weather_data[i])
+
+	#Creating the list of columns to drop for weather data
+	weather_cols = [i for i in range(weather_data[0].shape[1]) if i not in [4, 9, 11, 13, 15, 17, 23, 25]]
+
+	#Dropping irrelevant columns for weather datasets
+	for i in range(len(weather_data)):
+		weather_data[i] = weather_data[i].drop(columns = weather_data[i].columns[weather_cols])
+		weather_data[i]['Date/Time'] = weather_data[i]['Date/Time'].astype(str)
+		weather_data[i]['Date/Time'] = pd.to_datetime(weather_data[i]['Date/Time'])
+
+	#Joining the Weather data together
+	big_weather = weather_data[0]
+	for i in range(1, len(weather_data)):
+		big_weather = pd.concat([big_weather, weather_data[i]], ignore_index = True)
+
+	#Cut down all data with dates that is bigger than the biggest date and smaller than the smallest date with an output
+	big_weather = big_weather[big_weather['Date/Time'] <= max_date]
+	big_weather = big_weather[big_weather['Date/Time'] >= min_date]
+
+	#Fill out datasets' entries w no data w 0
+	big_weather = big_weather.fillna(0)
+
+	#Changing non output dataset's date column to 'OCCUPANCY_DATE'
+	big_weather = big_weather.rename(columns = {'Date/Time': 'OCCUPANCY_DATE'})
+
+	#-------Housing Data-------#
+
+	#loading up housing data
+	housing = load_csv_to_pandas(housing)
+
+	#Creating the list of columns to drop for housing
+	housing_cols = [i for i in range(0, housing.shape[1]) if i not in [0, 10]]
+
+	#Dropping irrelevant columns for housing dataset
+	housing = housing[housing['GEO'] == 'Toronto, Ontario']
+	housing = housing[housing['New housing price indexes'] == 'Total (house and land)']
+	housing = housing.drop(columns = housing.columns[housing_cols])
+	housing = housing.rename(columns = {housing.columns[0]: 'OCCUPANCY_DATE'})
+	housing["OCCUPANCY_DATE"] = pd.to_datetime(housing["OCCUPANCY_DATE"])
+	housing = housing[housing["OCCUPANCY_DATE"] >= min_date]
+	housing = housing[housing["OCCUPANCY_DATE"] <= max_date].reset_index(drop=True)
+	housing = pd.merge(housing, date_df, on = 'OCCUPANCY_DATE', how = 'outer')
+	housing = housing.sort_values(by='OCCUPANCY_DATE').reset_index(drop=True)
+	housing = housing.ffill()
+
+	#-------Crisis Data-------#
+	
+	#Loading the crisis dataset
+	crisis = load_csv_to_pandas(crisis)
+
+	#Creating the list of columns to drop for crisis dataset
+	crisis_col = [i for i in range(0, crisis.shape[1]) if i not in [2, 7]]
+
+	crisis = crisis.drop(columns = crisis.columns[crisis_col])
+	crisis = crisis.rename(columns = {'EVENT_DATE': 'OCCUPANCY_DATE'})
+	crisis = crisis.groupby(['OCCUPANCY_DATE', 'EVENT_TYPE']).size().unstack(fill_value=0)
+	crisis.reset_index(inplace=True)
+	crisis = crisis.rename_axis(None, axis=1)
+	crisis['OCCUPANCY_DATE'] = pd.to_datetime(crisis['OCCUPANCY_DATE']).dt.date
+	crisis['OCCUPANCY_DATE'] = pd.to_datetime(crisis['OCCUPANCY_DATE'])
+	crisis = crisis[crisis["OCCUPANCY_DATE"] >= min_date]
+	crisis = crisis[crisis["OCCUPANCY_DATE"] <= max_date]
+	crisis = pd.merge(date_df, crisis, on='OCCUPANCY_DATE', how='left')
+
+	#-------Final Data Prep-------#
+
+	#Merge the datasets together through date
+	big_data = pd.merge(big_data, big_weather, on = 'OCCUPANCY_DATE', how = 'inner')
+	big_data = pd.merge(big_data, housing, on = 'OCCUPANCY_DATE', how = 'inner')
+	big_data = pd.merge(big_data, crisis, on = 'OCCUPANCY_DATE', how = 'inner')
+
+	big_data = big_data.sort_values(by='OCCUPANCY_DATE')
+
+	#Placing the bed and room occupancy column last
+	room_occupancy = big_data.pop('OCCUPANCY_RATE_ROOMS')
+	bed_occupancy = big_data.pop('OCCUPANCY_RATE_BEDS')
+	big_data['OCCUPANCY_RATE_BEDS'] = bed_occupancy
+	big_data['OCCUPANCY_RATE_ROOMS'] = room_occupancy
+
+
+
+	grouped_data = big_data.groupby('PROGRAM_ID')
+	shelter_data_frames = {}
+	for shelter_id, shelter_group in grouped_data:
+		shelter_data_frames[shelter_id] = shelter_group
+		shelter_data_frames[shelter_id]['OCCUPANCY_DATE'] = pd.to_datetime(shelter_data_frames[shelter_id]['OCCUPANCY_DATE'])
+
+	big_data.reset_index(inplace=True)
+	big_data = big_data.drop(columns = ['index'])
+
+	return big_data, shelter_data_frames
+
+def loadData2(output_data, weather_data, housing, crisis):
+
+	#-------Output Data-------#
+	#Loading up the links to the output dataset
+	for i in range(len(output_data)):
+		output_data[i] = load_csv_to_pandas(output_data[i])
+
+	#Creating the list of columns to drop for datasets above 2020
+	cols_above_20 = [i for i in range(output_data[0].shape[1]) if i not in [1, 3,5,7,8,9, 12, 19, 20, 22, 25, 27, 30, 31]]
 
 	#Dropping irrelevant columns for datasets above 2020
 	for i in range(len(output_data)):

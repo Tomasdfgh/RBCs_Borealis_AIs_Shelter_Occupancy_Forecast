@@ -54,6 +54,8 @@ if __name__ == "__main__":
 	#Initialize the scaler
 	scaler = dl.get_scaler()
 
+	print(dataframe)
+
 	#
 	df = dl.prep_Data(dataframe)
 	df = df[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']]
@@ -62,7 +64,7 @@ if __name__ == "__main__":
 	n_steps = 7
 	batch_size = 16
 	learning_rate = 0.001
-	num_epochs = 5
+	num_epochs = 70
 	train_test_split = 0.75
 	loss_function = nn.MSELoss()
 
@@ -71,15 +73,30 @@ if __name__ == "__main__":
 	hidden_size = 4 
 	num_stacked_layers = 1
 
+	#LSTM model
 	#Initialize Model and optimizers
 	model = md.LSTM(input_size, hidden_size, num_stacked_layers)
 	optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
 
 	#Training Model
 	train_loader, test_loader, X_train, y_train, X_test, y_test, date_frame = dl.time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split)
 	
 	model, training_loss, valid_loss, avg_valid_loss = tr.begin_training(model,num_epochs, train_loader, test_loader, loss_function, optimizer)
 
+	df_use = iso_data[11812]
+	if df_use['OCCUPANCY_RATE_ROOMS'].isna().all():
+		df_use = df_use.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+	else:
+		df_use = df_use.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+
+	df_example = torch.tensor(scaler.fit_transform(np.array(df_use['OCCUPIED_PERCENTAGE']).reshape(-1, 1)).reshape((-1, df_use.shape[0], 1))).float()
+	traced_model = torch.jit.trace(model, df_example)
+
+	traced_model.save('time-series-lstm.pt')
+
+	# df_final = dl.infer_future_dates(df_use, model, 60, scaler)
+	# print(df_final)
 	#------Post Training Analysis------#
 
 	#Temporary Measure: Removing any shelters with less than 7 data points
@@ -88,9 +105,9 @@ if __name__ == "__main__":
 			del iso_data[i]
 
 	#Flags to indicate plotting
-	plot_general = True
-	plot_random = True
-	plot_errors = True
+	plot_general = False
+	plot_random = False
+	plot_errors = False
 
 	#Inferring Data for All Shelters
 	if plot_general:

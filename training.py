@@ -16,10 +16,6 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
         for batch_index, batch in enumerate(train_loader):
             x_batch, y_batch = batch[0], batch[1]
             output = model(x_batch)
-
-            print("y: " + str(y_batch.shape))
-            print("x: " + str(x_batch.shape))
-
             loss_ = loss(output, y_batch)
             running_loss += loss_.item()
 
