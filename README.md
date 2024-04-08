@@ -1,7 +1,7 @@
 # Optimising Homeless Shelter Operations in Toronto: A Machine Learning Approach
 Let's Solve It (2024)
 
-_Project by Nida Copty, Tom Nyguen, and India Tory_
+_Project by Nida Copty, Tom Nguyen, and India Tory_
 
 ## Problem Statement
 ### Background
@@ -35,6 +35,15 @@ The Data_Visualization.ipynb notebook imports and prepares our datasets. It expl
 In our project, we have decided to consider a comprehensive machine learning approach by experimenting with a selection of different models. This strategy involves designing and testing multiple models, including Long Short-Term Memory (LSTM) networks, Random Forest Regression, Facebook Prophet, and Seasonal Autoregressive Integrated Moving Average (SARIMA) models. Our objective is to compare their performances rigorously to identify strengths and weaknesses unique to each. By leveraging the comparative analysis, we aim to combine these models strategically, capitalizing on their individual advantages to enhance overall predictive accuracy. This approach allows us to tailor our solution to deliver the best possible performance in optimizing homeless shelter operations.
 
 ### LSTM
+LSTM (Long Short-Term Memory) networks offer a powerful solution for time series forecasting tasks, particularly in predicting shelter occupancy rates. LSTMs excel in retaining relevant information over extended sequences through their memory cell state, allowing them to recognize seasonalities, trends, and other critical patterns. Furthermore, these networks demonstrate flexibility in handling varying sequence lengths, accommodating the diverse historical data available for each shelter. Robustness to noisy data and the capability to learn hierarchical representations further enhance their utility in forecasting tasks. In essence, LSTM networks present a sophisticated yet adaptable approach to shelter occupancy prediction, leveraging their strengths in temporal modeling to provide accurate and insightful forecasts. The currently implementation is only the output feature, we are looking into implementing a multivariate LSTM.
+
+#### Data Preprocessing
+To preprocess the data, we join the 4 years of data together and break them up into individual datasets for different shelters. Furthermore, the training dataset is created through combining the occupancy rates for every shelters together into a singular data point. The model shall be trained on that dataframe. From a trained model, future data can be inferred for individual shelters using their respective occupancy rates. 
+
+![occupancy_rates_toronto](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/1bb30d82-ed31-4084-a914-5fd124fcfe7e)
+The combined occupancy rates of all shelters from 2021 to March 25th 2024
+
+#### Model Result
 
 ### RFR
 
