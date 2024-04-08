@@ -38,12 +38,31 @@ In our project, we have decided to consider a comprehensive machine learning app
 LSTM (Long Short-Term Memory) networks offer a powerful solution for time series forecasting tasks, particularly in predicting shelter occupancy rates. LSTMs excel in retaining relevant information over extended sequences through their memory cell state, allowing them to recognize seasonalities, trends, and other critical patterns. Furthermore, these networks demonstrate flexibility in handling varying sequence lengths, accommodating the diverse historical data available for each shelter. Robustness to noisy data and the capability to learn hierarchical representations further enhance their utility in forecasting tasks. In essence, LSTM networks present a sophisticated yet adaptable approach to shelter occupancy prediction, leveraging their strengths in temporal modeling to provide accurate and insightful forecasts. The currently implementation is only the output feature, we are looking into implementing a multivariate LSTM.
 
 #### Data Preprocessing
-To preprocess the data, we join the 4 years of data together and break them up into individual datasets for different shelters. Furthermore, the training dataset is created through combining the occupancy rates for every shelters together into a singular data point. The model shall be trained on that dataframe. From a trained model, future data can be inferred for individual shelters using their respective occupancy rates. 
 
-![occupancy_rates_toronto](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/1bb30d82-ed31-4084-a914-5fd124fcfe7e)
-The combined occupancy rates of all shelters from 2021 to March 25th 2024
+To preprocess the data, we join the 4 years of data together and break them up into individual datasets for different shelters. Furthermore, the training dataset is created through combining the occupancy rates for every shelters together into a singular data point. The model shall be trained on that dataframe. From a trained model, future data can be inferred for individual shelters using their respective occupancy rates.
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/1bb30d82-ed31-4084-a914-5fd124fcfe7e)" width="450" alt="chessBoard">
+  <br>
+  <em>The combined occupancy rates of all shelters from 2021 to March 25th 2024</em>
+</p>
 
 #### Model Result
+This same dataset is then used to train the model, resulting in this inference on that same dataset:
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/732b93c8-f316-4880-a215-c4fb7b9979ab" width="450" alt="chessBoard">
+  <br>
+  <em>Model prediction on dataset</em>
+</p>
+
+Then, the same model is used for inference on 9 random shelters in the city. The first half of the data for that shelter is passed into the model for it to help predict the other half:
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/06c4a6a7-b32f-4f3a-8768-2a6d91900c79" width="900" alt="chessBoard">
+  <br>
+  <em>Model Inference on random shelters</em>
+</p>
+
 
 ### RFR
 
@@ -53,4 +72,5 @@ The combined occupancy rates of all shelters from 2021 to March 25th 2024
 
 
 ## UI
-Blurb on user interface... 
+![image](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/6646b2c4-cc94-46e7-95d2-e737af68d1ed)
+
