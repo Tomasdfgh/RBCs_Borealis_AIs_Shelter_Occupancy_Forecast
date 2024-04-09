@@ -32,8 +32,9 @@ The Data_Visualization.ipynb notebook imports and prepares our datasets. It expl
 <img width="1425" alt="Screenshot 2024-04-07 at 10 13 09 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/355d6aa5-d05d-4664-a6e3-8dfee57ef237">
 
 In addition, we tried to better understand the relationship between different datapoints using other visualization methods.
-![Unknown-1](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/e16b8be2-8e96-451f-bc3e-0dafd9917b6c)
+<img width="1439" alt="Screenshot 2024-04-09 at 3 55 17 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/d7b40894-3cba-4d75-b0cf-c1ce45ba71a0">
 
+So far, we are not seeing the correlation that we expected, so we are hoping to do further data exploration to better understand the problem.
 
 ## Machine Learning Approach
 In our project, we have decided to consider a comprehensive machine learning approach by experimenting with a selection of different models. This strategy involves designing and testing multiple models, including Long Short-Term Memory (LSTM) networks, Random Forest Regression, Facebook Prophet, and Seasonal Autoregressive Integrated Moving Average (SARIMA) models. Our objective is to compare their performances rigorously to identify strengths and weaknesses unique to each. By leveraging the comparative analysis, we aim to combine these models strategically, capitalizing on their individual advantages to enhance overall predictive accuracy. This approach allows us to tailor our solution to deliver the best possible performance in optimizing homeless shelter operations.
