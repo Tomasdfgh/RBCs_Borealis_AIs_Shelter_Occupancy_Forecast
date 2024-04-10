@@ -69,6 +69,13 @@ Then, the same model is used for inference on 9 random shelters in the city. The
 </p>
 
 
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/2cfd6e7d-8bd4-4bc7-81dc-8808a8ceebc9" width="900" alt="chessBoard">
+  <br>
+  <em>Model's Metrics</em>
+</p>
+
+
 ### RFR
 
 ### SARIMA
