@@ -71,6 +71,35 @@ def plot_general(X_train, y_train, n_steps, scaler, model, date_frame):
 	plt.legend()
 	plt.show()
 
+def plot_general_2(model, df, n_future, scaler, per_ = None):
+	model.train(False)
+
+	#Remove the previous 60 days for inference
+	dc = dl.get_dc()
+	copy_df = dc(df)
+	use_date = max(df['OCCUPANCY_DATE']) - pd.Timedelta(days = n_future)
+	copy_df = copy_df[copy_df['OCCUPANCY_DATE'] <= use_date]
+
+	#Scale the features
+	copy_df.set_index('OCCUPANCY_DATE', inplace=True)
+	scaler = scaler.fit(copy_df)
+	df_scaled = scaler.transform(copy_df)
+
+	data_pass = torch.tensor(df_scaled).unsqueeze(0).float()
+
+	y = model(data_pass).squeeze(0)
+
+	x_1 = [i for i in range(1120)]
+	x_2 = [i for i in range(1120, 1120 + n_future)]
+
+	plt.plot(x_1, df_scaled[:, 1])
+	plt.plot(x_2, y.detach().numpy())
+	plt.show()
+
+
+
+
+
 
 def plot_errors(training_loss, valid_loss, avg_valid_loss):
 	epochs = [i for i in range(1, len(training_loss) + 1)]

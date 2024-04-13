@@ -37,6 +37,9 @@ def get_standard_scaler():
 	scaler = StandardScaler()
 	return scaler
 
+def get_dc():
+	return dc
+
 def load_csv_to_pandas(file_path):
 	try:
 		# Load CSV file into a pandas data_23Frame
@@ -449,9 +452,6 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	y_train = y[:split_index]
 	y_test = y[split_index:]
 
-	print(X_train.shape)
-	print(y_train.shape)
-
 	X_train = X_train.reshape((-1, n_steps, 1))
 	X_test = X_test.reshape((-1, n_steps, 1))
 
@@ -462,9 +462,6 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 	y_train = torch.tensor(y_train).float()
 	X_test = torch.tensor(X_test).float()
 	y_test = torch.tensor(y_test).float()
-
-	print(X_train.shape)
-	print(y_train.shape)
 
 	train_dataset = TimeSeriesDataset(X_train, y_train)
 	test_dataset = TimeSeriesDataset(X_test, y_test)
@@ -479,6 +476,7 @@ def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
 
 def time_series_multivariate(df, scaler, n_past, n_future, train_test_split, batch_size):
 
+	df = dc(df)
 	df.set_index('OCCUPANCY_DATE', inplace=True)
 	df = df.astype(float)
 	scaler = scaler.fit(df)
@@ -506,6 +504,8 @@ def time_series_multivariate(df, scaler, n_past, n_future, train_test_split, bat
 
 	X_train_ = X_train.reshape((-1, n_past, num_feat))
 	X_test_ = X_test.reshape((-1, n_past, num_feat))
+
+	print(X_train.shape)
 
 	X_train = torch.tensor(X_train).float()
 	Y_train = torch.tensor(Y_train).float()

@@ -53,7 +53,7 @@ if __name__ == "__main__":
 	train_test_split = 0.8
 	batch_size = 16
 	learning_rate = 1e-3
-	num_epochs = 20
+	num_epochs = 50
 	loss_function = nn.MSELoss()
 
 	#Model's Hyperparameters
@@ -78,7 +78,10 @@ if __name__ == "__main__":
 	#Flags to indicate plotting
 	plot_general = True
 	plot_random = True
-	plot_errors = True
+	plot_errors = False
+
+	if plot_general:
+		pl.plot_general_2(model, df, n_future, scaler)
 
 	if plot_errors:
 		pl.plot_errors(training_loss, valid_loss, avg_valid_loss)
