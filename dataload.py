@@ -6,6 +6,9 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
+from sklearn.preprocessing import StandardScaler
+
+
 
 import matplotlib.pyplot as plt
 
@@ -28,6 +31,10 @@ class TimeSeriesDataset(Dataset):
 
 def get_scaler():
 	scaler = MinMaxScaler(feature_range = (-1, 1))
+	return scaler
+
+def get_standard_scaler():
+	scaler = StandardScaler()
 	return scaler
 
 def load_csv_to_pandas(file_path):
@@ -342,52 +349,6 @@ def prep_Data(df):
 	df = df.drop(columns = ['CAPACITY_ACTUAL_BED_TOTAL_CAPACITY', 'CAPACITY_ACTUAL_ROOM_TOTAL_CAPACITY', 'OCCUPIED_BEDS_TOTAL_OCCUPIED', 'OCCUPIED_ROOMS_TOTAL_OCCUPIED', 'TOTAL_CAPACITY', 'TOTAL_OCCUPIED'])
 	return df
 
-#This function takes in a df and convert it to dataloader for training purposes
-def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
-
-	#Converting the df into a time series for lstm
-	df = dc(df)
-	df.set_index('OCCUPANCY_DATE', inplace=True)
-	for i in range(1, n_steps+1):
-		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
-	df.dropna(inplace=True)
-	lstm_data = df.to_numpy()
-
-	#Getting the date column for graphing purposes
-	df.reset_index(inplace=True)
-	date_frame = df['OCCUPANCY_DATE']
-
-	#Converting the data into dataloader
-	lstm_data = scaler.fit_transform(lstm_data)
-	X = dc(np.flip(lstm_data[:, 1:], axis = 1))
-	y = lstm_data[:, 0]
-	split_index = int(len(X) * train_test_split)
-
-	X_train = X[:split_index]
-	X_test = X[split_index:]
-
-	y_train = y[:split_index]
-	y_test = y[split_index:]
-
-	X_train = X_train.reshape((-1, n_steps, 1))
-	X_test = X_test.reshape((-1, n_steps, 1))
-
-	y_train = y_train.reshape((-1, 1))
-	y_test = y_test.reshape((-1, 1))
-
-	X_train = torch.tensor(X_train).float()
-	y_train = torch.tensor(y_train).float()
-	X_test = torch.tensor(X_test).float()
-	y_test = torch.tensor(y_test).float()
-
-	train_dataset = TimeSeriesDataset(X_train, y_train)
-	test_dataset = TimeSeriesDataset(X_test, y_test)
-
-	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-	return train_loader, test_loader, X_train, y_train, X_test, y_test, date_frame
-
 #This function is for the UI. Pass a dataframe with date and output data into it, and it will return X where data can be inferred by the model and
 #y to be plotted directly as a comparison
 #This function is now obsolete and no longer in use. I will still leave it here just in case
@@ -459,3 +420,103 @@ def infer_future_dates(df, model, future_time, scaler):
 	df_new['OCCUPIED_PERCENTAGE'] = new_data_df
 
 	return df_new
+
+
+#This function takes in a df and convert it to dataloader for training purposes
+def time_series_for_lstm(df, n_steps, scaler, batch_size, train_test_split):
+
+	#Converting the df into a time series for lstm
+	df = dc(df)
+	df.set_index('OCCUPANCY_DATE', inplace=True)
+	for i in range(1, n_steps+1):
+		df[f'OCCUPIED_PERCENTAGE(t-{i})'] = df['OCCUPIED_PERCENTAGE'].shift(i)
+	df.dropna(inplace=True)
+	lstm_data = df.to_numpy()
+
+	#Getting the date column for graphing purposes
+	df.reset_index(inplace=True)
+	date_frame = df['OCCUPANCY_DATE']
+
+	#Converting the data into dataloader
+	lstm_data = scaler.fit_transform(lstm_data)
+	X = dc(np.flip(lstm_data[:, 1:], axis = 1))
+	y = lstm_data[:, 0]
+	split_index = int(len(X) * train_test_split)
+
+	X_train = X[:split_index]
+	X_test = X[split_index:]
+
+	y_train = y[:split_index]
+	y_test = y[split_index:]
+
+	print(X_train.shape)
+	print(y_train.shape)
+
+	X_train = X_train.reshape((-1, n_steps, 1))
+	X_test = X_test.reshape((-1, n_steps, 1))
+
+	y_train = y_train.reshape((-1, 1))
+	y_test = y_test.reshape((-1, 1))
+
+	X_train = torch.tensor(X_train).float()
+	y_train = torch.tensor(y_train).float()
+	X_test = torch.tensor(X_test).float()
+	y_test = torch.tensor(y_test).float()
+
+	print(X_train.shape)
+	print(y_train.shape)
+
+	train_dataset = TimeSeriesDataset(X_train, y_train)
+	test_dataset = TimeSeriesDataset(X_test, y_test)
+
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+	return train_loader, test_loader, X_train, y_train, X_test, y_test, date_frame
+
+#------------------------------All functions below will be used for Multivariate LSTM------------------------------#
+
+
+def time_series_multivariate(df, scaler, n_past, n_future, train_test_split, batch_size):
+
+	df.set_index('OCCUPANCY_DATE', inplace=True)
+	df = df.astype(float)
+	scaler = scaler.fit(df)
+
+	df_scaled = scaler.transform(df)
+
+	num_feat = len([i for i in df])
+
+	train_x = []
+	train_y = []
+
+	for i in range(n_past, len(df_scaled) - n_future + 1):
+		train_x.append(df_scaled[i - n_past:i, 0:df_scaled.shape[1]])
+		train_y.append(df_scaled[i: i + n_future, 1])
+
+	train_x, train_y = np.array(train_x), np.array(train_y)
+
+	split_index = int(len(train_x) * train_test_split)
+
+	X_train = train_x[:split_index]
+	X_test = train_x[split_index:]
+
+	Y_train = train_y[:split_index]
+	Y_test = train_y[split_index:]
+
+	X_train_ = X_train.reshape((-1, n_past, num_feat))
+	X_test_ = X_test.reshape((-1, n_past, num_feat))
+
+	X_train = torch.tensor(X_train).float()
+	Y_train = torch.tensor(Y_train).float()
+	X_test = torch.tensor(X_test).float()
+	Y_test = torch.tensor(Y_test).float()
+
+	train_Dataset = TimeSeriesDataset(X_train, Y_train)
+	test_Dataset = TimeSeriesDataset(X_test, Y_test)
+
+	train_loader = DataLoader(train_Dataset, batch_size = batch_size, shuffle = True)
+	test_loader = DataLoader(test_Dataset, batch_size = batch_size, shuffle = False)
+
+	return train_loader, test_loader
+
