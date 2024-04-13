@@ -1,7 +1,7 @@
 # Optimising Homeless Shelter Operations in Toronto: A Machine Learning Approach
 Let's Solve It (2024)
 
-_Project by Nida Copty, Tom Nguyen, and India Tory_
+_Project by Nida Copty, Emily Nguyen, Tom Nguyen, and India Tory_
 
 ## Problem Statement
 ### Background
