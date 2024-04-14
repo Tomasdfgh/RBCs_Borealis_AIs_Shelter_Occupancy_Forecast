@@ -520,3 +520,24 @@ def time_series_multivariate(df, scaler, n_past, n_future, train_test_split, bat
 
 	return train_loader, test_loader
 
+
+def infer_data_multivariate(model, df, scaler, n_future):
+
+	#Set model training to False
+	model.train(False)
+
+	#Build Dateframe for future days
+	max_date = df['OCCUPANCY_DATE'].max()
+	date_range = pd.date_range(start=max_date, end=max_date + pd.Timedelta(days=n_future), freq = 'D')
+	df_new = pd.DataFrame({'OCCUPANCY_DATE': date_range})
+
+	#Scaling input Dataframe
+	dc = get_dc()
+	copy_df = dc(df)
+	copy_df.set_index('OCCUPANCY_DATE', inplace = True)
+	df_scaled = scaler.fit_transform(copy_df)
+
+	#Convert data to tensor and passing it into the model to get predicted data and converting it into a panda dataframe before returning it
+	df_new['OCCUPIED_PERCENTAGE'] = pd.DataFrame(np.insert(scaler.inverse_transform(np.repeat(model(torch.tensor(df_scaled).unsqueeze(0).float()).detach().numpy().reshape(-1,1), copy_df.shape[1], axis = -1))[:,-1], 0, df['OCCUPIED_PERCENTAGE'].iloc[-1]), columns = ['OCCUPIED_PERCENTAGE'])
+
+	return df_new

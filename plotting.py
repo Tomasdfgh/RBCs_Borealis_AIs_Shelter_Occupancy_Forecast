@@ -4,6 +4,8 @@ import dataload as dl
 import torch
 import pandas as pd
 
+import numpy as np
+
 #Inferring Data for random shelters
 def plot_random_shelters(iso_data, model, num_sq, scaler, per_):
 
@@ -49,6 +51,52 @@ def plot_random_shelters(iso_data, model, num_sq, scaler, per_):
 	plt.tight_layout()
 	plt.show()
 
+#Inferring Data for random shelters
+def plot_random_shelters_2(model, iso_data, n_future, num_sq, scaler, test_check = False):
+
+	dc = dl.get_dc()
+
+	random_keys = random.sample(list(iso_data), num_sq ** 2)
+	fig, axs = plt.subplots(num_sq, num_sq, figsize=(11, 8))
+	for i in range(num_sq):
+		for j in range(num_sq):
+
+			shelter_index = random_keys[i * num_sq + j]  # Calculate the index from the 1D array
+
+			#Preprocess the iso by copying it into local variables to avoid changing the iso_data itself
+			df_use = dc(iso_data[shelter_index])
+			max_date = df_use['OCCUPANCY_DATE'].max()
+
+			if df_use['OCCUPANCY_RATE_ROOMS'].isna().all():
+				df_use = df_use.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+			else:
+				df_use = df_use.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+
+			#Temporary Measure. Need to change when integrate fully
+			df_infer = df_use[['OCCUPANCY_DATE','Mean Temp (Â°C)' ,'OCCUPIED_PERCENTAGE']]
+
+			#If test check, move the data back by n_future days inorder to view model's performance
+			if test_check:
+				use_date = max(df_use['OCCUPANCY_DATE']) - pd.Timedelta(days = n_future)
+				df_infer = df_infer[df_infer['OCCUPANCY_DATE'] <= use_date]
+
+			try:
+				df = dl.infer_data_multivariate(model, df_infer, scaler, n_future)
+
+				axs[i, j].plot(df_use['OCCUPANCY_DATE'], df_use['OCCUPIED_PERCENTAGE'])
+				axs[i, j].plot(df['OCCUPANCY_DATE'], df['OCCUPIED_PERCENTAGE'])
+
+				#Labeling
+				axs[i, j].set_title(f'Shelter {shelter_index}')
+				axs[i, j].set_xlabel('Date')
+				axs[i, j].set_ylabel('Occupied Percentage (%)')
+
+			except Exception as e:
+				print("Error: " + str(e))
+
+	plt.tight_layout()
+	plt.show()
+
 #Inferring Data for All Shelters
 def plot_general(X_train, y_train, n_steps, scaler, model, date_frame):
 	model.train(False)
@@ -71,34 +119,27 @@ def plot_general(X_train, y_train, n_steps, scaler, model, date_frame):
 	plt.legend()
 	plt.show()
 
-def plot_general_2(model, df, n_future, scaler, per_ = None):
-	model.train(False)
+def plot_general_2(model, df, n_future, scaler, test_check = False):
 
-	#Remove the previous 60 days for inference
+	#Deep copying the dataframe
 	dc = dl.get_dc()
 	copy_df = dc(df)
-	use_date = max(df['OCCUPANCY_DATE']) - pd.Timedelta(days = n_future)
-	copy_df = copy_df[copy_df['OCCUPANCY_DATE'] <= use_date]
 
-	#Scale the features
-	copy_df.set_index('OCCUPANCY_DATE', inplace=True)
-	scaler = scaler.fit(copy_df)
-	df_scaled = scaler.transform(copy_df)
+	#If test check, move the data back by n_future days inorder to view model's performance
+	if test_check:
+		use_date = max(copy_df['OCCUPANCY_DATE']) - pd.Timedelta(days = n_future)
+		copy_df = copy_df[copy_df['OCCUPANCY_DATE'] <= use_date]
 
-	data_pass = torch.tensor(df_scaled).unsqueeze(0).float()
+	#Getting the inferred data
+	data_frame = dl.infer_data_multivariate(model, copy_df, scaler,n_future)
 
-	y = model(data_pass).squeeze(0)
-
-	x_1 = [i for i in range(1120)]
-	x_2 = [i for i in range(1120, 1120 + n_future)]
-
-	plt.plot(x_1, df_scaled[:, 1])
-	plt.plot(x_2, y.detach().numpy())
+	plt.plot(df['OCCUPANCY_DATE'], df['OCCUPIED_PERCENTAGE'], label='Actual')
+	plt.plot(data_frame['OCCUPANCY_DATE'], data_frame['OCCUPIED_PERCENTAGE'], label='Predicted')
+	plt.title('All Shelters Occupancy Rates')
+	plt.xlabel('Date')
+	plt.ylabel('Occupied Percentage (%)')
+	plt.legend()
 	plt.show()
-
-
-
-
 
 
 def plot_errors(training_loss, valid_loss, avg_valid_loss):

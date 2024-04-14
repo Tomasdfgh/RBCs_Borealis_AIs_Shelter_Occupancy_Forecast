@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-import numpy as np
-
 if __name__ == "__main__":
 
 
@@ -40,7 +38,7 @@ if __name__ == "__main__":
 	#	--iso_data-- is the dataframe but broken up into a hashmap where the key is the shelter id and the value is the data for that specific shelter
 
 	#Initialize the scaler
-	scaler = dl.get_standard_scaler()
+	scaler = dl.get_scaler()
 
 	#test_df = iso_data[16091]
 
@@ -53,7 +51,7 @@ if __name__ == "__main__":
 	train_test_split = 0.8
 	batch_size = 16
 	learning_rate = 1e-3
-	num_epochs = 50
+	num_epochs = 100
 	loss_function = nn.MSELoss()
 
 	#Model's Hyperparameters
@@ -78,10 +76,11 @@ if __name__ == "__main__":
 	#Flags to indicate plotting
 	plot_general = True
 	plot_random = True
-	plot_errors = False
+	plot_errors = True
 
 	if plot_general:
-		pl.plot_general_2(model, df, n_future, scaler)
+		test_check = True
+		pl.plot_general_2(model, df, n_future, scaler, test_check)
 
 	if plot_errors:
 		pl.plot_errors(training_loss, valid_loss, avg_valid_loss)
