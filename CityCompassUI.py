@@ -169,7 +169,7 @@ class CityCompassApp():
         data_crisis = r"C:\Users\tomng\Desktop\RBC's Borealis AI Lets Solve It\Datasets\Persons_in_Crisis_Calls_for_Service_Attended_Open_Data.csv"
 
         #Load up DataFrame
-        dataframe, self.iso_data = dl.loadData2(links, links_weather, data_housing, data_crisis)
+        dataframe, self.iso_data = dl.loadData(links, links_weather, data_housing, data_crisis)
         
         #Setting up the model
         self.model = torch.jit.load('time-series-lstm.pt')
@@ -436,7 +436,7 @@ class CityCompassApp():
         self.end_date_lbl.place(x = 150, y = 415)
         self.end_date_lbl.configure(fg= self.theme_bold, bg= self.theme)
 
-        self.madeby = tk.Label(self.master, text = "Made by India Tory EngSci MI 2T4, Nida Copty EngSci MI 2T4, and Thomas Nguyen EngSci MI 2T4")
+        self.madeby = tk.Label(self.master, text = "Made by India Tory EngSci MI 2T4, Nida Copty EngSci MI 2T4, Emily Nguyen EngScI MI 2T4 and Thomas Nguyen EngSci MI 2T4")
         self.madeby.place(x = 7, y = 473)
         self.madeby.configure(fg= self.theme_bold, bg= self.theme)
 
