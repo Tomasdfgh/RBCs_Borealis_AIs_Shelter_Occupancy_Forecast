@@ -27,6 +27,8 @@ def plot_random_shelters(model, iso_data, n_future, num_sq, scaler, used_feature
 
 			df_infer = df_use[used_features]
 
+			df_infer = dl.feature_check(df_infer)
+
 			#If test check, move the data back by n_future days inorder to view model's performance
 			if test_check:
 
@@ -60,6 +62,7 @@ def plot_general(model, df, n_future, scaler, test_check = False, future_days = 
 	#Deep copying the dataframe
 	dc = dl.get_dc()
 	copy_df = dc(df)
+	copy_df = dl.feature_check(copy_df)
 
 	#If test check, move the data back by n_future days inorder to view model's performance
 	if test_check:

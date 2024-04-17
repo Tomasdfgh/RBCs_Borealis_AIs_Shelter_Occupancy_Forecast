@@ -35,8 +35,8 @@ def begin_training(model,num_epochs, train_loader, test_loader, loss, optimizer)
             x_batch, y_batch = batch[0], batch[1]
 
             with torch.no_grad():
-                output = model(x_batch)
-                loss_ = loss(output, y_batch)
+                output    = model(x_batch)
+                loss_     = loss(output, y_batch)
                 vad_loss += loss_.item()
 
         validation_loss.append(vad_loss)

@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 
 #Immediate work:
-# Clean up loadData function so it is a lot cleaner
-# Build data clean up function so that features can be swapped in and out with ease
+# Clean up loadData function so it is a lot cleaner																				DONE
+# Build data clean up function so that features can be swapped in and out with ease 											DONE
 # A lot of the code base has been changed. Test CityCompassUI.py script again and make sure has no problems
 #	- Test all buttons make sure they all work with no errors. If errors, figure out why.
 #	- Integrate new model. Looks much cleaner.
@@ -37,7 +37,7 @@ import torch.nn as nn
 if __name__ == "__main__":
 
 	#Flags to see which model types to train and show
-	uni_lstm = True
+	uni_lstm = False
 	multi_lstm = True
 
 	#---------------------------------------------------PREP DATA---------------------------------------------------#
@@ -61,14 +61,14 @@ if __name__ == "__main__":
 
 	#Crisis helpline
 	data_crisis = r"C:\Users\tomng\Desktop\RBC's Borealis AI Lets Solve It\Datasets\Persons_in_Crisis_Calls_for_Service_Attended_Open_Data.csv"
-	
+
 	#Load Data takes in all the datasets and create a general dataframe to be adapted again for training different types of Model
 	dataframe, iso_data = dl.loadData(links.copy(), links_weather.copy(), data_housing, data_crisis)
 	#Function output explanation:
 	#	--DataFrame-- is the general combined data of all datasets, unaltered.
 	#	--iso_data-- is the dataframe but broken up into a hashmap where the key is the shelter id and the value is the data for that specific shelter
 
-	#------------------------------------------------Univariate LSTM-------------------------------------------------#
+	#---------------------------------------Combined Shelters Univariate LSTM----------------------------------------#
 
 	if uni_lstm:
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 		n_future = 1
 		batch_size = 16
 		learning_rate = 1e-3
-		num_epochs = 50
+		num_epochs = 5
 		train_test_split = 0.75
 		loss_function = nn.MSELoss()
 
@@ -152,9 +152,16 @@ if __name__ == "__main__":
 		#Combined All Shelters together into same days
 		df = dl.merge_Shelters_Data(dataframe)
 
+		for i in df:
+			print(i)
+
 		#Select Features
-		used_features = ['OCCUPANCY_DATE','Mean Temp (Â°C)' ,'OCCUPIED_PERCENTAGE']
+		#used_features = ['OCCUPANCY_DATE','Mean Temp (Â°C)', 'Person in Crisis', 'VALUE' ,'OCCUPIED_PERCENTAGE']
+		used_features = ['OCCUPANCY_DATE', 'Max Temp (Â°C)' , 'Min Temp (Â°C)', 'Mean Temp (Â°C)', 'Heat Deg Days (Â°C)', 'Cool Deg Days (Â°C)', 'Total Precip (mm)', 'Snow on Grnd (cm)', 'VALUE', 'Overdose', 'Person in Crisis', 'Suicide-related', 'OCCUPIED_PERCENTAGE']
 		df = df[used_features]
+
+		#Pass the dataframe into a fill function that fills up all missing data
+		df = dl.feature_check(df)
 
 		#Hyper Parameters
 		n_future = 60
@@ -166,7 +173,7 @@ if __name__ == "__main__":
 		loss_function = nn.MSELoss()
 
 		#Model's Hyperparameters
-		input_size = 2
+		input_size = len(used_features) - 1
 		hidden_size = 120
 		num_stacked_layers = 1
 		output_size = n_future
@@ -191,7 +198,7 @@ if __name__ == "__main__":
 		#Flags to indicate plotting
 		plot_general = True
 		plot_random = True
-		plot_errors = True
+		plot_errors = False
 
 		if plot_general:
 			#Test_check flag is to move the data back inorder to predict data that already exists so you can view accuracy

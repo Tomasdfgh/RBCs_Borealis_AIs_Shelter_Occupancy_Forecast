@@ -79,12 +79,14 @@ def loadData(output_data, weather_data, housing, crisis):
 	for i in range(len(output_data)):
 		output_data[i] = load_csv_to_pandas(output_data[i])
 
-	#Creating the list of columns to drop for datasets above 2020
-	cols_above_20 = [i for i in range(output_data[0].shape[1]) if i not in [1, 3,5,7,8,9, 12, 19, 20, 22, 25, 27, 30, 31]]
+	# # Getting the names of the columns to drop
+	# columns_to_drop = output_data[0].columns[cols_above_20]
 
-	#Dropping irrelevant columns for datasets above 2020
+	# print(columns_to_drop)
+
+	#Dropping irrelevant columns for output datasets
 	for i in range(len(output_data)):
-		output_data[i] = output_data[i].drop(columns = output_data[i].columns[cols_above_20])
+		output_data[i] = output_data[i].drop(columns = ['_id', 'ORGANIZATION_ID', 'SHELTER_ID', 'LOCATION_ID', 'LOCATION_CITY', 'LOCATION_PROVINCE', 'PROGRAM_NAME', 'SECTOR', 'PROGRAM_MODEL','OVERNIGHT_SERVICE_TYPE', 'PROGRAM_AREA', 'SERVICE_USER_COUNT', 'CAPACITY_FUNDING_BED', 'UNOCCUPIED_BEDS', 'UNAVAILABLE_BEDS', 'CAPACITY_FUNDING_ROOM', 'UNOCCUPIED_ROOMS', 'UNAVAILABLE_ROOMS'])
 		output_data[i]['OCCUPANCY_DATE'] = output_data[i]['OCCUPANCY_DATE'].astype(str)
 		output_data[i]['OCCUPANCY_DATE'] =  pd.to_datetime(output_data[i]['OCCUPANCY_DATE'])
 
@@ -98,7 +100,6 @@ def loadData(output_data, weather_data, housing, crisis):
 	min_date = big_data['OCCUPANCY_DATE'].min()
 	date_range = pd.date_range(start=min_date, end=max_date, freq = 'D')
 	date_df = pd.DataFrame({'OCCUPANCY_DATE': date_range})
-	#1, 11, 12 for 2020 and below
 
 	#-------Weather Data-------#
 
@@ -106,12 +107,10 @@ def loadData(output_data, weather_data, housing, crisis):
 	for i in range(len(weather_data)):
 		weather_data[i] = load_csv_to_pandas(weather_data[i])
 
-	#Creating the list of columns to drop for weather data
-	weather_cols = [i for i in range(weather_data[0].shape[1]) if i not in [4, 9, 11, 13, 15, 17, 23, 25]]
-
 	#Dropping irrelevant columns for weather datasets
 	for i in range(len(weather_data)):
-		weather_data[i] = weather_data[i].drop(columns = weather_data[i].columns[weather_cols])
+		weather_data[i] = weather_data[i].drop(columns = ['ï»¿"Longitude (x)"', 'Latitude (y)', 'Station Name', 'Climate ID', 'Year', 'Month', 'Day', 'Data Quality', 'Max Temp Flag', 'Min Temp Flag', 'Mean Temp Flag', 'Heat Deg Days Flag', 'Cool Deg Days Flag', 'Total Rain (mm)', 'Total Rain Flag', 'Total Snow (cm)', 'Total Snow Flag', 'Total Precip Flag',
+		'Snow on Grnd Flag', 'Dir of Max Gust (10s deg)', 'Dir of Max Gust Flag', 'Spd of Max Gust (km/h)', 'Spd of Max Gust Flag'])
 		weather_data[i]['Date/Time'] = weather_data[i]['Date/Time'].astype(str)
 		weather_data[i]['Date/Time'] = pd.to_datetime(weather_data[i]['Date/Time'])
 
@@ -135,13 +134,10 @@ def loadData(output_data, weather_data, housing, crisis):
 	#loading up housing data
 	housing = load_csv_to_pandas(housing)
 
-	#Creating the list of columns to drop for housing
-	housing_cols = [i for i in range(0, housing.shape[1]) if i not in [0, 10]]
-
 	#Dropping irrelevant columns for housing dataset
 	housing = housing[housing['GEO'] == 'Toronto, Ontario']
 	housing = housing[housing['New housing price indexes'] == 'Total (house and land)']
-	housing = housing.drop(columns = housing.columns[housing_cols])
+	housing = housing.drop(columns = ['GEO', 'DGUID', 'New housing price indexes', 'UOM', 'UOM_ID', 'SCALAR_FACTOR', 'SCALAR_ID', 'VECTOR', 'COORDINATE', 'STATUS', 'SYMBOL', 'TERMINATED', 'DECIMALS'])
 	housing = housing.rename(columns = {housing.columns[0]: 'OCCUPANCY_DATE'})
 	housing["OCCUPANCY_DATE"] = pd.to_datetime(housing["OCCUPANCY_DATE"])
 	housing = housing[housing["OCCUPANCY_DATE"] >= min_date]
@@ -155,10 +151,8 @@ def loadData(output_data, weather_data, housing, crisis):
 	#Loading the crisis dataset
 	crisis = load_csv_to_pandas(crisis)
 
-	#Creating the list of columns to drop for crisis dataset
-	crisis_col = [i for i in range(0, crisis.shape[1]) if i not in [2, 7]]
-
-	crisis = crisis.drop(columns = crisis.columns[crisis_col])
+	#Analyize Data
+	crisis = crisis.drop(columns = ['ï»¿OBJECTID', 'EVENT_ID', 'EVENT_YEAR', 'EVENT_MONTH', 'EVENT_DOW', 'EVENT_HOUR', 'DIVISION', 'OCCURRENCE_CREATED', 'APPREHENSION_MADE', 'MCIT_ATTEND', 'HOOD_158', 'NEIGHBOURHOOD_158', 'HOOD_140', 'NEIGHBOURHOOD_140'])
 	crisis = crisis.rename(columns = {'EVENT_DATE': 'OCCUPANCY_DATE'})
 	crisis = crisis.groupby(['OCCUPANCY_DATE', 'EVENT_TYPE']).size().unstack(fill_value=0)
 	crisis.reset_index(inplace=True)
@@ -183,8 +177,6 @@ def loadData(output_data, weather_data, housing, crisis):
 	bed_occupancy = big_data.pop('OCCUPANCY_RATE_BEDS')
 	big_data['OCCUPANCY_RATE_BEDS'] = bed_occupancy
 	big_data['OCCUPANCY_RATE_ROOMS'] = room_occupancy
-
-
 
 	grouped_data = big_data.groupby('PROGRAM_ID')
 	shelter_data_frames = {}
@@ -305,7 +297,7 @@ def infer_date_(model, df, scaler, n_future, future_days = None):
 
 	#Case 2: if model predicts one day at a time; therefore need loop to predict all future_days days.
 	if n_future == 1 and future_days is not None:
-		
+
 		data = torch.tensor(scaler.fit_transform(np.array(copy_df['OCCUPIED_PERCENTAGE']).reshape(-1, 1)).reshape((-1, copy_df.shape[0], 1))).float()
 		for i in range(future_days):
 			y = model(data).unsqueeze(0)
@@ -326,3 +318,11 @@ def infer_date_(model, df, scaler, n_future, future_days = None):
 		df_new['OCCUPIED_PERCENTAGE'] = new_data_df
 
 	return df_new
+
+def feature_check(df):
+    df_ = dc(df)
+    for i in df_.columns:
+        if df_[i].isna().any():
+            avg = df_[i].mean()
+            df_.loc[:, i] = df_[i].fillna(avg)
+    return df_
