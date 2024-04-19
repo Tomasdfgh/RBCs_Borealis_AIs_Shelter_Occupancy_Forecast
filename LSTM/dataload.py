@@ -232,6 +232,7 @@ def check_consistent_dates(df):
 
 def time_series_converter(df, scaler, n_past, n_future, train_test_split, batch_size):
 
+
     df = dc(df)
     df.set_index('OCCUPANCY_DATE', inplace=True)
     df = df.astype(float)
@@ -274,8 +275,91 @@ def time_series_converter(df, scaler, n_past, n_future, train_test_split, batch_
 
     return train_loader, test_loader
 
+def time_series_one_hot_converter(iso_data, shel_group, scaler, n_past, n_future, train_test_split, batch_size, used_features):
 
-def infer_date_(model, df, scaler, n_future, future_days = None):
+    train_x = []
+    train_y = []
+
+    one_hot_len = max(shel_group.values()) + 1
+
+    num_feat = len(used_features) - 1 + one_hot_len
+
+    dfs = []
+
+    #Iterate through all useable Shelters
+    for i in shel_group:
+
+        #Getting the df from Iso Data
+        df = iso_data[int(i)]
+
+        #Unifying the df to have the same output column name
+        if df['OCCUPANCY_RATE_ROOMS'].isna().all():
+            df = df.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+        else:
+            df = df.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+
+        df = df[used_features]
+
+        df = feature_check(df)
+
+        for z in range(one_hot_len):
+            if shel_group[i] == z:
+                df['Feature_' + str(z)] = 1
+            else:
+                df['Feature_' + str(z)] = 0
+
+        dfs.append(df)
+
+    #Concatenating all Dfs together
+    concatenated_df = pd.concat(dfs, ignore_index=True)
+
+    #Isolate the feature columns
+    iso_col = concatenated_df[['Feature_' + str(i) for i in range(one_hot_len)]]
+
+    #Scaled the dfs
+    scaler = scaler.fit(concatenated_df[used_features[1:]])
+    np_df = scaler.fit_transform(concatenated_df[used_features[1:]])
+    df_scaled = pd.DataFrame(np_df, columns=used_features[1:])
+
+    #Combined the final df together
+    np_df = pd.concat([iso_col, df_scaled], axis=1).values
+
+    #Converting it into a time series
+    for i in range(n_past, len(np_df) - n_future + 1):
+        train_x.append(np_df[i - n_past: i, 0:np_df.shape[1]])
+        train_y.append(np_df[i: i + n_future, - 1])
+
+    train_x, train_y = np.array(train_x), np.array(train_y)
+
+    split_index = int(len(train_x) * train_test_split)
+
+    X_train = train_x[:split_index]
+    X_test = train_x[split_index:]
+
+    Y_train = train_y[:split_index]
+    Y_test = train_y[split_index:]
+
+    X_train_ = X_train.reshape((-1, n_past, num_feat))
+    X_test_ = X_test.reshape((-1, n_past, num_feat))
+
+    X_train = torch.tensor(X_train).float()
+    Y_train = torch.tensor(Y_train).float()
+    X_test = torch.tensor(X_test).float()
+    Y_test = torch.tensor(Y_test).float()
+
+    train_Dataset = TimeSeriesDataset(X_train, Y_train)
+    test_Dataset = TimeSeriesDataset(X_test, Y_test)
+
+    train_loader = DataLoader(train_Dataset, batch_size = batch_size, shuffle = True)
+    test_loader = DataLoader(test_Dataset, batch_size = batch_size, shuffle = False)
+
+    return train_loader, test_loader
+
+def infer_date_(model, df, scaler, n_future, future_days = None, one_hot_feature = None):
+
+    #one_hot_feature guide
+    #0: Index of 1's
+    #1: Length of Vector
 
     #Set model training to False
     model.train(False)
@@ -294,8 +378,23 @@ def infer_date_(model, df, scaler, n_future, future_days = None):
         copy_df.set_index('OCCUPANCY_DATE', inplace = True)
         df_scaled = scaler.fit_transform(copy_df)
 
+        if one_hot_feature is not None:
+            for i in range(one_hot_feature[1]):
+
+                if i != one_hot_feature[0]:
+                    arr = np.zeros((df_scaled.shape[0], 1))
+                    df_scaled = np.hstack((arr, df_scaled))
+                else:
+                    arr = np.ones((df_scaled.shape[0], 1))
+                    df_scaled = np.hstack((arr, df_scaled))
+
         #Convert data to tensor and passing it into the model to get predicted data and converting it into a panda dataframe before returning it
-        df_new['OCCUPIED_PERCENTAGE'] = pd.DataFrame(np.insert(scaler.inverse_transform(np.repeat(model(torch.tensor(df_scaled).unsqueeze(0).float()).detach().numpy().reshape(-1,1), copy_df.shape[1], axis = -1))[:,-1], 0, df['OCCUPIED_PERCENTAGE'].iloc[-1]), columns = ['OCCUPIED_PERCENTAGE'])
+        y = model(torch.tensor(df_scaled).unsqueeze(0).float()).detach().numpy().reshape(-1,1)
+        y_ = np.repeat(y, copy_df.shape[1], axis = -1)
+        y_actual = scaler.inverse_transform(y_)[:,-1]
+        y_inserted = np.insert(y_actual, 0, df['OCCUPIED_PERCENTAGE'].iloc[-1])
+        df_new['OCCUPIED_PERCENTAGE'] = pd.DataFrame(y_inserted, columns = ['OCCUPIED_PERCENTAGE'])
+
 
     #Case 2: if model predicts one day at a time; therefore need loop to predict all future_days days.
     if n_future == 1 and future_days is not None:

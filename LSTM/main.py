@@ -94,7 +94,7 @@ if __name__ == "__main__":
 		n_future = 1
 		batch_size = 16
 		learning_rate = 1e-3
-		num_epochs = 5
+		num_epochs = 1
 		train_test_split = 0.75
 		loss_function = nn.MSELoss()
 
@@ -155,12 +155,9 @@ if __name__ == "__main__":
 		#Combined All Shelters together into same days
 		df = dl.merge_Shelters_Data(dataframe)
 
-		for i in df:
-			print(i)
-
 		#Select Features
 		#used_features = ['OCCUPANCY_DATE','Mean Temp (Â°C)', 'Person in Crisis', 'VALUE' ,'OCCUPIED_PERCENTAGE']
-		used_features = ['OCCUPANCY_DATE', 'Max Temp (Â°C)' , 'Min Temp (Â°C)', 'Mean Temp (Â°C)', 'Heat Deg Days (Â°C)', 'Cool Deg Days (Â°C)', 'Total Precip (mm)', 'Snow on Grnd (cm)', 'VALUE', 'Overdose', 'Person in Crisis', 'Suicide-related', 'OCCUPIED_PERCENTAGE']
+		used_features = ['OCCUPANCY_DATE', 'Max Temp (Â°C)', 'OCCUPIED_PERCENTAGE']
 		df = df[used_features]
 
 		#Pass the dataframe into a fill function that fills up all missing data
@@ -172,7 +169,7 @@ if __name__ == "__main__":
 		train_test_split = 0.8
 		batch_size = 16
 		learning_rate = 1e-3
-		num_epochs = 50
+		num_epochs = 1
 		loss_function = nn.MSELoss()
 
 		#Model's Hyperparameters
@@ -193,14 +190,14 @@ if __name__ == "__main__":
 
 		#------Post Training Analysis------#
 
-		#Temporary Measure: Removing any shelters with less than 7 data points
+		#Temporary Measure: Removing incompatible shelters
 		for i in iso_data.copy():
 			if iso_data[i].shape[0] <= n_past - 1:
 				del iso_data[i]
 
 		#Flags to indicate plotting
 		plot_general = True
-		plot_random = True
+		plot_random = False
 		plot_errors = False
 
 		if plot_general:
@@ -302,8 +299,6 @@ if __name__ == "__main__":
 			#Getting the final Locations and Centroids Graph
 			cens_coord,cens_index = km.k_means(data,4)
 
-			print(cens_index)
-
 			cens_x = []
 			cens_y = []
 			for i in cens_coord:
@@ -325,4 +320,56 @@ if __name__ == "__main__":
 			for i,n in enumerate(hash_):
 				shel_group[n] = cens_index[i]
 
-			print("Shelter Grouping: " + str(shel_group))
+			#Creating and Training Model
+
+			#Deepcopy the dataframe for any changes
+			dc = dl.get_dc()
+			df = dc(dataframe)
+
+			#Initialize the scaler
+			scaler = dl.get_scaler()
+
+			#Combined All Shelters together into same days
+			df = dl.merge_Shelters_Data(df)
+
+			used_features = ['OCCUPANCY_DATE', 'Max Temp (Â°C)', 'OCCUPIED_PERCENTAGE']
+
+			#Hyper Parameters
+			n_future = 60
+			n_past = 90
+			train_test_split = 0.8
+			batch_size = 16
+			learning_rate = 1e-3
+			num_epochs = 20
+			loss_function = nn.MSELoss()
+			scaler = dl.get_scaler()
+
+			#Model's Hyperparameters
+			input_size = len(used_features) + max(shel_group.values())
+			hidden_size = 120
+			num_stacked_layers = 1
+			output_size = n_future
+
+			#Initialize Model and optimizers
+			model = md.LSTM(input_size, hidden_size, num_stacked_layers, output_size)
+			optimizer = torch.optim.AdamW(model.parameters(), lr = learning_rate)
+
+			#Getting Dataloader
+			train_loader, test_loader = dl.time_series_one_hot_converter(iso_data, shel_group.copy(), scaler, n_past, n_future, train_test_split, batch_size, used_features)
+
+			#Training Model
+			model, training_loss, valid_loss, avg_valid_loss = tr.begin_training(model, num_epochs, train_loader, test_loader, loss_function, optimizer)
+
+
+			#Flags to indicate plotting
+			plot_random = True
+			plot_errors = True
+			plot_general = False
+
+			if plot_random:
+				test_check = True
+				num_sq = 3
+				pl.plot_random_shelters_one_hot(model, iso_data, n_future, num_sq, scaler, used_features,shel_group.copy(), test_check)
+
+			if plot_errors:
+				pl.plot_errors(training_loss, valid_loss, avg_valid_loss)

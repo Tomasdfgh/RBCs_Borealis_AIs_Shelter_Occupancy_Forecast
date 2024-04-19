@@ -18,7 +18,6 @@ def k_means(data,k):
 	for i in range(0,k):
 		cens_cord.append(data[ran_lst.pop()])
 
-	print(cens_cord)
 	#---End of Initialization---#
 
 	#---Testing Code for 2D---#
