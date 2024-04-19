@@ -1,9 +1,11 @@
+#Local Imports
 import dataload as dl
 import training as tr
 import model as md
 import plotting as pl
-import matplotlib.pyplot as plt
+import k_means_project as km
 
+#Library Imports
 import torch
 import torch.nn as nn
 
@@ -38,7 +40,8 @@ if __name__ == "__main__":
 
 	#Flags to see which model types to train and show
 	uni_lstm = False
-	multi_lstm = True
+	multi_lstm = False
+	location_grouping = True
 
 	#---------------------------------------------------PREP DATA---------------------------------------------------#
 
@@ -212,3 +215,114 @@ if __name__ == "__main__":
 
 		if plot_errors:
 			pl.plot_errors(training_loss, valid_loss, avg_valid_loss)
+
+
+	#-------------------------------------------Location Grouping Feature--------------------------------------------#
+
+
+	if location_grouping:
+
+		#Flags
+		run_grouping = False
+		k_means = True
+
+		if run_grouping:
+
+			#Locate Shelters Location
+
+			location_x = []
+			location_y = []
+
+			total_ = 0
+			remove = []
+
+			hash_ = {}
+
+			for i in iso_data:
+				
+				if len(iso_data[i]) >= 150:
+
+					coordinates = dl.get_coordinates(iso_data[i]['LOCATION_ADDRESS'].iloc[0])
+					#print(coordinates)
+					try:
+						if coordinates[0] > 43.4 and coordinates[0] < 44 and coordinates[1] < -79.4 and coordinates[1] > -80.2:
+							print("Address: " + str(iso_data[i]['LOCATION_ADDRESS'].iloc[0]))
+							print("Lat: " + str(coordinates[0]) + ", Long: " + str(coordinates[1]))
+							print('\n')
+
+							total_ += len(iso_data[i])
+							location_x.append(coordinates[0])
+							location_y.append(coordinates[1])
+							hash_[i] = [coordinates[0], coordinates[1]]
+					except:
+						print("Failed")
+						remove.append(i)
+				else:
+					remove.append(i)
+
+			print(hash_)
+			pl.plot_coord(location_x, location_y)
+
+		#Running K-means Analysis on locations
+
+		if k_means:
+
+			#This dictionary is obtained from locating shelters Location from run_grouping
+			hash_ = {11794: [43.6814522, -79.4181972], 11798: [43.6518512, -79.4036296], 11799: [43.6479162, -79.4114678], 11815: [43.742472, -79.4965543], 11831: [43.641817, -79.401972], 11871: [43.6818715, -79.4186979], 11891: [43.65866645, -79.40075323510317], 11895: [43.658445145098035, -79.40873056862745], 11911: [43.7733887, -79.4150282], 11971: [43.6919186, -79.4398677], 12011: [43.6658599, -79.44591857692308], 12053: [43.665538, -79.4631271], 12231: [43.6179513, -79.4973594], 12251: [43.65792664736842, -79.4071056368421], 12252: [43.68310682710351, -79.76882185782915], 12254: [43.7156276, -79.4674122], 12274: [43.87560463274981, -79.40554412497633], 12291: [43.7364663, -79.5802022], 12292: [43.7364663, -79.5802022], 12471: [43.6518512, -79.4036296], 12711: [43.641817, -79.401972], 13451: [43.667900849999995, -79.4055445043087], 13932: [43.87560463274981, -79.40554412497633], 14051: [43.7721425, -79.5382173], 14251: [43.6508952, -79.40135909072545], 14571: [43.7392967, -79.566092], 14572: [43.7392967, -79.566092], 14631: [43.650085250000004, -79.40251746774611], 14651: [43.67530011065648, -79.40151870869647], 14671: [43.67530011065648, -79.40151870869647], 15111: [43.7842498, -79.4168959], 15112: [43.7842498, -79.4168959], 15171: [43.6683775, -79.4830903], 15711: [43.63901885, -79.4465142944708], 15811: [43.75630675, -79.52718552084744], 15871: [43.75630675, -79.52718552084744], 16111: [43.7163873, -79.5928746], 16131: [43.6325184, -79.4200876], 16151: [43.6325184, -79.4200876], 16191: [43.718908049999996, -79.51456906328633], 16192: [43.718908049999996, -79.51456906328633], 16193: [43.718908049999996, -79.51456906328633], 16194: [43.7842498, -79.4168959], 16271: [43.718908049999996, -79.51456906328633], 16311: [43.718908049999996, -79.51456906328633], 16371: [43.6614308, -79.4288255], 16671: [43.718908049999996, -79.51456906328633], 16691: [43.718908049999996, -79.51456906328633], 16891: [43.6921591, -79.57658485154437], 16892: [43.6921591, -79.57658485154437], 16911: [43.7842498, -79.4168959], 17011: [43.718908049999996, -79.51456906328633], 17012: [43.718908049999996, -79.51456906328633], 17191: [43.7842498, -79.4168959], 17211: [43.7576821, -79.5286579], 17212: [43.7576821, -79.5286579], 17691: [43.869914157032476, -79.40087182664998], 17771: [43.7842498, -79.4168959], 17772: [43.7842498, -79.4168959], 17791: [43.7842498, -79.4168959], 17811: [43.7842498, -79.4168959]}
+
+			data = []
+			for i in hash_:
+				data.append(hash_[i])
+
+			x_axis = []
+			y_axis = []
+
+			for i in range(2,8):
+
+				cens_coord,cens_index = km.k_means(data,i)
+				x_axis.append(i)
+				dist_s = 0
+				distortions = 0
+				for z in range(0,i):
+					dist_s = 0
+					q = 0
+					while q < len(data):
+						if cens_index[q] == z:
+							for s in range(len(data[0])):
+								dist_s += (data[q][s] - cens_coord[z][s])**2
+							distortions += dist_s
+						q += 1
+				distortions = distortions/len(data)
+				y_axis.append(distortions)
+
+			plot_distortions = False
+			if plot_distortions:
+				pl.plot_distortions(y_axis, x_axis)
+
+			#Getting the final Locations and Centroids Graph
+			cens_coord,cens_index = km.k_means(data,4)
+
+			print(cens_index)
+
+			cens_x = []
+			cens_y = []
+			for i in cens_coord:
+				cens_x.append(i[0])
+				cens_y.append(i[1])
+
+			shel_x = []
+			shel_y = []
+			for i in hash_:
+				shel_x.append(hash_[i][0])
+				shel_y.append(hash_[i][1])
+
+			plot_sheltes_w_centroids = False
+			if plot_sheltes_w_centroids:
+				pl.plot_shelters_n_centroids(cens_x, cens_y, shel_x, shel_y)
+
+			#which means the grouping for each shelter is:
+			shel_group = {}
+			for i,n in enumerate(hash_):
+				shel_group[n] = cens_index[i]
+
+			print("Shelter Grouping: " + str(shel_group))

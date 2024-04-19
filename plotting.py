@@ -3,6 +3,7 @@ import random
 import dataload as dl
 import torch
 import pandas as pd
+import folium
 
 #Inferring Data for random shelters
 def plot_random_shelters(model, iso_data, n_future, num_sq, scaler, used_features, test_check = False, future_days = None):
@@ -107,3 +108,47 @@ def plot_errors(training_loss, valid_loss, avg_valid_loss):
 	axs[2].set_ylabel('Error')
 	plt.tight_layout()
 	plt.show()
+
+def plot_coord(x, y):
+
+	# Creating the plot
+	plt.figure(figsize=(8, 6))
+	plt.plot(y, x, 'o', color='blue')
+	plt.title('Toronto Shelters Location')
+	plt.xlabel('Longitude')
+	plt.ylabel('Latitude')
+	plt.show()
+
+
+def plot_distortions(x, y):
+
+	# Creating the plot
+	plt.figure(figsize=(8, 6))
+	plt.plot(y, x, 'o', color='blue')
+	plt.title('Distortions')
+	plt.xlabel('Number of Centroids (k)')
+	plt.ylabel('Distortions')
+	plt.show()
+
+def plot_shelters_n_centroids(cx, cy, sx, sy):
+
+	# Creating the plot
+	plt.figure(figsize=(8, 6))
+	plt.plot(cy, cx, 'o', color='blue')
+	plt.plot(sy, sx, '.', color='red')
+	plt.title('Distortions')
+	plt.xlabel('Longitude')
+	plt.ylabel('Latitude')
+	plt.show()
+
+
+def plot_coord_actual(location_x, location_y, filename="Toronto_Shelter_Location.html"):
+    # Creating the map centered at the mean of coordinates
+    map_center = [sum(location_x)/len(location_x), sum(location_y)/len(location_y)]
+    map_osm = folium.Map(location=map_center, zoom_start=12)
+
+    # Adding markers for each location
+    for x, y in zip(location_x, location_y):
+        folium.Marker(location=[x, y]).add_to(map_osm)
+
+    map_osm.save(filename)
