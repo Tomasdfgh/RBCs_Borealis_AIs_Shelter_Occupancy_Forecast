@@ -36,7 +36,7 @@ def load_csv_to_pandas(file_path):
     try:
         # Load CSV file into a pandas data_23Frame
         df = pd.read_csv(file_path, header=0, low_memory=False, encoding='unicode_escape')
-        print("Number of rows in the data_23Frame:", file_path, len(df))
+        print("Number of rows in the dataFrame:", file_path, len(df))
         return df
     except FileNotFoundError:
         print(f"File '{file_path}' not found.")
