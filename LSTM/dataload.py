@@ -81,11 +81,6 @@ def loadData(output_data, weather_data, housing, crisis):
     for i in range(len(output_data)):
         output_data[i] = load_csv_to_pandas(output_data[i])
 
-    # # Getting the names of the columns to drop
-    # columns_to_drop = output_data[0].columns[cols_above_20]
-
-    # print(columns_to_drop)
-
     #Dropping irrelevant columns for output datasets
     for i in range(len(output_data)):
         output_data[i] = output_data[i].drop(columns = ['_id', 'ORGANIZATION_ID', 'SHELTER_ID', 'LOCATION_ID', 'LOCATION_CITY', 'LOCATION_PROVINCE', 'PROGRAM_NAME', 'SECTOR', 'PROGRAM_MODEL','OVERNIGHT_SERVICE_TYPE', 'PROGRAM_AREA', 'SERVICE_USER_COUNT', 'CAPACITY_FUNDING_BED', 'UNOCCUPIED_BEDS', 'UNAVAILABLE_BEDS', 'CAPACITY_FUNDING_ROOM', 'UNOCCUPIED_ROOMS', 'UNAVAILABLE_ROOMS'])

@@ -112,7 +112,7 @@ def plot_random_shelters_one_hot(model, iso_data, n_future, num_sq, scaler, used
 	plt.show()
 
 
-def plot_general(model, df, n_future, scaler, test_check = False, future_days = None, shel_group = None):
+def plot_general(model, df, n_future, scaler, test_check = False, future_days = None):
 
 	#Deep copying the dataframe
 	dc = dl.get_dc()
@@ -131,10 +131,7 @@ def plot_general(model, df, n_future, scaler, test_check = False, future_days = 
 			copy_df = copy_df[copy_df['OCCUPANCY_DATE'] <= use_date]
 
 	#Getting the inferred data
-	if shel_group is not None:
-		df = dl.infer_date_(model, df_infer, scaler, n_future, future_days, [shel_group[shelter_index], max(shel_group.values()) + 1])
-	else:
-		data_frame = dl.infer_date_(model, copy_df, scaler,n_future, future_days)
+	data_frame = dl.infer_date_(model, copy_df, scaler,n_future, future_days)
 
 	plt.plot(df['OCCUPANCY_DATE'], df['OCCUPIED_PERCENTAGE'], label='Actual')
 	plt.plot(data_frame['OCCUPANCY_DATE'], data_frame['OCCUPIED_PERCENTAGE'], label='Predicted')
