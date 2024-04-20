@@ -230,9 +230,6 @@ if __name__ == "__main__":
 			location_x = []
 			location_y = []
 
-			total_ = 0
-			remove = []
-
 			hash_ = {}
 
 			for i in iso_data:
@@ -243,19 +240,12 @@ if __name__ == "__main__":
 					#print(coordinates)
 					try:
 						if coordinates[0] > 43.4 and coordinates[0] < 44 and coordinates[1] < -79.4 and coordinates[1] > -80.2:
-							print("Address: " + str(iso_data[i]['LOCATION_ADDRESS'].iloc[0]))
-							print("Lat: " + str(coordinates[0]) + ", Long: " + str(coordinates[1]))
-							print('\n')
 
-							total_ += len(iso_data[i])
 							location_x.append(coordinates[0])
 							location_y.append(coordinates[1])
 							hash_[i] = [coordinates[0], coordinates[1]]
 					except:
-						print("Failed")
-						remove.append(i)
-				else:
-					remove.append(i)
+						pass
 
 			print(hash_)
 			pl.plot_coord(location_x, location_y)
