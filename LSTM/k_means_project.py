@@ -6,8 +6,6 @@ def k_means(data,k):
 
 	#---Initialization---#
 	# Cluster centroids placement are picked at a data point
-
-
 	cens_cord = []
 	ran_lst = []
 	while len(set(ran_lst)) < k:
@@ -20,48 +18,6 @@ def k_means(data,k):
 
 	#---End of Initialization---#
 
-	#---Testing Code for 2D---#
-	# if len(data[0]) == 2:
-	# 	x_array = []
-	# 	y_array = []
-	# 	for i in range(len(data)):
-	# 		x_array.append(data[i][0])
-	# 		y_array.append(data[i][1])
-	# 	clusters_x = []
-	# 	clusters_y = []
-	# 	for i in range(len(cens_cord)):
-	# 		clusters_x.append(cens_cord[i][0])
-	# 		clusters_y.append(cens_cord[i][1])
-	# 	plt.plot(x_array, y_array, ".", color="red")
-	# 	plt.plot(clusters_x, clusters_y, "ob")
-	# 	plt.show()
-	#---End of Testing Code for 2D---#
-
-	#---Testing Code for 3D---#
-	if len(data[0]) == 3:
-		x_array = []
-		y_array = []
-		z_array = []
-		for i in range(len(data)):
-		 	x_array.append(data[i][0])
-		 	y_array.append(data[i][1])
-		 	z_array.append(data[i][2])
-		clusters_x = []
-		clusters_y = []
-		clusters_z = []
-		for i in range(len(cens_cord)):
-			clusters_x.append(cens_cord[i][0])
-			clusters_y.append(cens_cord[i][1])
-			clusters_z.append(cens_cord[i][2])
-		fig = plt.figure(figsize = (7,7))
-		ax = fig.add_subplot(111,projection = '3d')
-		ax.scatter(x_array, y_array, z_array, label = "data")
-		ax.scatter(clusters_x,clusters_y,clusters_z,marker = "x", c = "red",label = "centroids")
-		plt.show()
-	#---End of Testing Code for 3D---#
-
-
-
 	#Repeating loop
 	stor_cord = []
 	temporary = []
@@ -70,7 +26,6 @@ def k_means(data,k):
 			temporary.append(cens_cord[i][z])
 		stor_cord.append(temporary)
 		temporary = []
-	#print("Stor: " + str(stor_cord))
 
 	while True:
 		cen_closest = []
@@ -126,34 +81,6 @@ def k_means(data,k):
 
 		#--- End of Move Centroid---#
 
-		#---Testing Code---#
-		# if len(data[0]) == 2:
-		# 	clusters_x = []
-		# 	clusters_y = []
-		# 	for i in range(len(cens_cord)):
-		# 		clusters_x.append(cens_cord[i][0])
-		# 		clusters_y.append(cens_cord[i][1])
-		# 	plt.plot(x_array, y_array, ".", color="red")
-		# 	plt.plot(clusters_x, clusters_y, "ob")
-		# 	plt.show()
-		#---End of Testing Code---#
-
-		#---Testing Code for 3D---#
-		if len(data[0]) == 3:
-			clusters_x = []
-			clusters_y = []
-			clusters_z = []
-			for i in range(len(cens_cord)):
-				clusters_x.append(cens_cord[i][0])
-				clusters_y.append(cens_cord[i][1])
-				clusters_z.append(cens_cord[i][2])
-			fig = plt.figure(figsize = (7,7))
-			ax = fig.add_subplot(111,projection = '3d')
-			ax.scatter(x_array, y_array, z_array, label = "data")
-			ax.scatter(clusters_x,clusters_y,clusters_z,marker = "x", c = "red",label = "centroids")
-			plt.show()
-		#---End of Testing Code for 3D---#
-
 		#---Terminating Conditions---#
 		if cens_cord == stor_cord:
 			return cens_cord,cen_closest
@@ -167,8 +94,6 @@ def k_means(data,k):
 				temporary = []
 
 		#---End of Terminating Conditions---#
-		
-
 
 def find_max(data, i):
 	#i is the index of row
