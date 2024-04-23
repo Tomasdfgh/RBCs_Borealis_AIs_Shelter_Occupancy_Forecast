@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	#Flags to see which model types to train and show
 	uni_lstm = False
 	multi_lstm = False
-	location_grouping = True
+	location_grouping = False
 
 	#---------------------------------------------------PREP DATA---------------------------------------------------#
 
@@ -71,6 +71,15 @@ if __name__ == "__main__":
 	#	--DataFrame-- is the general combined data of all datasets, unaltered.
 	#	--iso_data-- is the dataframe but broken up into a hashmap where the key is the shelter id and the value is the data for that specific shelter
 
+	print(dataframe)
+
+	df = dl.prep_Data(dataframe)
+
+	print(df)
+
+	filtered_df = dataframe[dataframe['PROGRAM_ID'] == 16191]
+
+	print(filtered_df)
 	#---------------------------------------Combined Shelters Univariate LSTM----------------------------------------#
 
 	if uni_lstm:
