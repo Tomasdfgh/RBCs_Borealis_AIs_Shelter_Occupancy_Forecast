@@ -1,7 +1,4 @@
-# Optimising Homeless Shelter Operations in Toronto: A Machine Learning Approach
-Let's Solve It (2024)
-
-_Project by Nida Copty, Emily Nguyen, Tom Nguyen, and India Tory_
+<img width="1437" alt="Screenshot 2024-04-24 at 6 30 50 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/2f893bee-4825-437b-9fda-5dacf9281ac7">
 
 ## Problem Statement
 ### Background
@@ -55,3 +52,5 @@ Then, the same model is used for inference on 9 random shelters in the city. The
 ## User Interface
 ![MacBook Pro 15_ Mockup-2](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/de9972c6-2a74-41ce-8867-3e0e96ff8650)
 
+## Contributors
+_Project by Nida Copty, Emily Nguyen, Tom Nguyen, and India Tory_
