@@ -52,7 +52,6 @@ Then, the same model is used for inference on 9 random shelters in the city. The
   <em>Model's Metrics</em>
 </p>
 
-## UI
-
+## User Interface
 ![MacBook Pro 15_ Mockup-2](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/de9972c6-2a74-41ce-8867-3e0e96ff8650)
 
