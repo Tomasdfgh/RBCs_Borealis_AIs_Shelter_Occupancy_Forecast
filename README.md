@@ -50,7 +50,7 @@ Then, the same model is used for inference on 9 random shelters in the city. The
 </p>
 
 ## User Interface
-![MacBook Pro 15_ Mockup-2](https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/de9972c6-2a74-41ce-8867-3e0e96ff8650)
+<img width="1435" alt="Screenshot 2024-04-24 at 6 38 38 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/7ffa303e-f66d-4ce5-be62-5762854c6e56">
 
 ## Contributors
 _Project by Nida Copty, Emily Nguyen, Tom Nguyen, and India Tory_
