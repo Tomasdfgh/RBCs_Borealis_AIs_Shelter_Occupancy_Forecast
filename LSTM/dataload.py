@@ -242,99 +242,111 @@ def check_consistent_dates(df):
     else:
         return True
 
-def time_series_converter(df, scaler, n_past, n_future, train_test_split, batch_size):
+# def time_series_converter(df, scaler, n_past, n_future, train_test_split, batch_size):
 
 
-    df = dc(df)
-    df.set_index('OCCUPANCY_DATE', inplace=True)
-    df = df.astype(float)
-    scaler = scaler.fit(df)
+#     df = dc(df)
+#     df.set_index('OCCUPANCY_DATE', inplace=True)
+#     df = df.astype(float)
+#     scaler = scaler.fit(df)
 
-    df_scaled = scaler.transform(df)
+#     df_scaled = scaler.transform(df)
 
-    num_feat = len([i for i in df])
+#     num_feat = len([i for i in df])
+
+#     train_x = []
+#     train_y = []
+
+#     for i in range(n_past, len(df_scaled) - n_future + 1):
+#         train_x.append(df_scaled[i - n_past:i, 0:df_scaled.shape[1]])
+#         train_y.append(df_scaled[i: i + n_future, -1])
+
+#     train_x, train_y = np.array(train_x), np.array(train_y)
+
+#     split_index = int(len(train_x) * train_test_split)
+
+#     X_train = train_x[:split_index]
+#     X_test = train_x[split_index:]
+
+#     Y_train = train_y[:split_index]
+#     Y_test = train_y[split_index:]
+
+#     X_train_ = X_train.reshape((-1, n_past, num_feat))
+#     X_test_ = X_test.reshape((-1, n_past, num_feat))
+
+#     X_train = torch.tensor(X_train).float()
+#     Y_train = torch.tensor(Y_train).float()
+#     X_test = torch.tensor(X_test).float()
+#     Y_test = torch.tensor(Y_test).float()
+
+#     train_Dataset = TimeSeriesDataset(X_train, Y_train)
+#     test_Dataset = TimeSeriesDataset(X_test, Y_test)
+
+#     train_loader = DataLoader(train_Dataset, batch_size = batch_size, shuffle = True)
+#     test_loader = DataLoader(test_Dataset, batch_size = batch_size, shuffle = False)
+
+#     return train_loader, test_loader
+
+def time_series_converter(iso_data, scaler, n_past, n_future, train_test_split, batch_size, used_features, shel_group = None):
 
     train_x = []
     train_y = []
 
-    for i in range(n_past, len(df_scaled) - n_future + 1):
-        train_x.append(df_scaled[i - n_past:i, 0:df_scaled.shape[1]])
-        train_y.append(df_scaled[i: i + n_future, -1])
+    if shel_group is not None:
 
-    train_x, train_y = np.array(train_x), np.array(train_y)
+        one_hot_len = max(shel_group.values()) + 1
 
-    split_index = int(len(train_x) * train_test_split)
+        num_feat = len(used_features) - 1 + one_hot_len
 
-    X_train = train_x[:split_index]
-    X_test = train_x[split_index:]
+        dfs = []
 
-    Y_train = train_y[:split_index]
-    Y_test = train_y[split_index:]
+        #Iterate through all useable Shelters
+        for i in shel_group:
 
-    X_train_ = X_train.reshape((-1, n_past, num_feat))
-    X_test_ = X_test.reshape((-1, n_past, num_feat))
+            #Getting the df from Iso Data
+            df = iso_data[int(i)]
 
-    X_train = torch.tensor(X_train).float()
-    Y_train = torch.tensor(Y_train).float()
-    X_test = torch.tensor(X_test).float()
-    Y_test = torch.tensor(Y_test).float()
-
-    train_Dataset = TimeSeriesDataset(X_train, Y_train)
-    test_Dataset = TimeSeriesDataset(X_test, Y_test)
-
-    train_loader = DataLoader(train_Dataset, batch_size = batch_size, shuffle = True)
-    test_loader = DataLoader(test_Dataset, batch_size = batch_size, shuffle = False)
-
-    return train_loader, test_loader
-
-def time_series_one_hot_converter(iso_data, shel_group, scaler, n_past, n_future, train_test_split, batch_size, used_features):
-
-    train_x = []
-    train_y = []
-
-    one_hot_len = max(shel_group.values()) + 1
-
-    num_feat = len(used_features) - 1 + one_hot_len
-
-    dfs = []
-
-    #Iterate through all useable Shelters
-    for i in shel_group:
-
-        #Getting the df from Iso Data
-        df = iso_data[int(i)]
-
-        #Unifying the df to have the same output column name
-        if df['OCCUPANCY_RATE_ROOMS'].isna().all():
-            df = df.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
-        else:
-            df = df.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
-
-        df = df[used_features]
-
-        df = feature_check(df)
-
-        for z in range(one_hot_len):
-            if shel_group[i] == z:
-                df['Feature_' + str(z)] = 1
+            #Unifying the df to have the same output column name
+            if df['OCCUPANCY_RATE_ROOMS'].isna().all():
+                df = df.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
             else:
-                df['Feature_' + str(z)] = 0
+                df = df.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
 
-        dfs.append(df)
+            df = df[used_features]
 
-    #Concatenating all Dfs together
-    concatenated_df = pd.concat(dfs, ignore_index=True)
+            df = feature_check(df)
 
-    #Isolate the feature columns
-    iso_col = concatenated_df[['Feature_' + str(i) for i in range(one_hot_len)]]
+            for z in range(one_hot_len):
+                if shel_group[i] == z:
+                    df['Feature_' + str(z)] = 1
+                else:
+                    df['Feature_' + str(z)] = 0
 
-    #Scaled the dfs
-    scaler = scaler.fit(concatenated_df[used_features[1:]])
-    np_df = scaler.fit_transform(concatenated_df[used_features[1:]])
-    df_scaled = pd.DataFrame(np_df, columns=used_features[1:])
+            dfs.append(df)
 
-    #Combined the final df together
-    np_df = pd.concat([iso_col, df_scaled], axis=1).values
+            #Concatenating all Dfs together
+            concatenated_df = pd.concat(dfs, ignore_index=True)
+
+            #Isolate the feature columns
+            iso_col = concatenated_df[['Feature_' + str(i) for i in range(one_hot_len)]]
+
+            #Scaled the dfs
+            scaler = scaler.fit(concatenated_df[used_features[1:]])
+            np_df = scaler.fit_transform(concatenated_df[used_features[1:]])
+            df_scaled = pd.DataFrame(np_df, columns=used_features[1:])
+
+            #Combined the final df together
+            np_df = pd.concat([iso_col, df_scaled], axis=1).values
+
+    else:
+        df = dc(df)
+        df.set_index('OCCUPANCY_DATE', inplace=True)
+        df = df.astype(float)
+        scaler = scaler.fit(df)
+
+        np_df = scaler.transform(df)
+
+        num_feat = len([i for i in df])
 
     #Converting it into a time series
     for i in range(n_past, len(np_df) - n_future + 1):
