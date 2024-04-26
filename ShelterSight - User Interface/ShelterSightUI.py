@@ -504,6 +504,7 @@ class ShelterSightApp():
         self.prod_id_dropdown.bind("<<ComboboxSelected>>", self.on_dropdown_select)
 
         self.mod_chosen = tk.StringVar()
+        self.mod_chosen.set('Univariate LSTM')
         self.model_list = ttk.Combobox(self.master, textvariable = self.mod_chosen, state = "readonly", style = "ComboboxStyle.TCombobox")
         self.model_list['values'] = ['Univariate LSTM', 'City wide Multivariate LSTM', 'Correlation Grouping LSTM']
         self.model_list.place(x = 800, y = 470, width = 170)
