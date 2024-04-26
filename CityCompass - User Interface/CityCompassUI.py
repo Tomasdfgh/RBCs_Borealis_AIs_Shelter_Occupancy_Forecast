@@ -10,12 +10,17 @@ import pandas as pd
 import torch
 from io import BytesIO
 import base64
+import pandas as pd
+import numpy as np
+from copy import deepcopy as dc
+from torch.utils.data import Dataset
+import torch
+from torch.utils.data import DataLoader
+from sklearn.preprocessing import MinMaxScaler
+from geopy.geocoders import Nominatim
 
 #Local Files
 import dataload as dl
-
-#Work to do:
-#Add in a reset button so when you click it all the fields reset
 
 class Images:
 
@@ -127,12 +132,12 @@ class CalendarPopup2():
             self.callback(selected_date)
         self.popup.destroy()
 
-class CityCompassApp():
+class ShelterSightApp():
     def __init__(self, master):
 
         #------------------Software Setup------------------#
         self.master = master
-        self.master.title("CityCompass")
+        self.master.title("ShelterSight")
         self.master.geometry("1000x500")
         self.master.resizable(False, False)
 
@@ -171,11 +176,15 @@ class CityCompassApp():
         #Load up DataFrame
         dataframe, self.iso_data = dl.loadData(links, links_weather, data_housing, data_crisis)
         
-        #Setting up the model
+        #Setting up the models
         self.model = torch.jit.load('time-series-lstm.pt')
+        self.model_combined = torch.jit.load('multi_combined_model_im2.pt')
+        self.model_corr = torch.jit.load('corr_grouping_model.pt')
+
+        self.mod_hash = {'Univariate LSTM': self.model, 'City wide Multivariate LSTM': self.model_combined, 'Correlation Grouping LSTM': self.model_corr}
 
         #Define a scaler
-        self.scaler = dl.get_scaler()
+        self.scaler = MinMaxScaler(feature_range = (-1, 1))
 
         # Canvas Box
         self.uiCanvas = tk.Canvas(self.master, width=1000, height=500, bg = self.theme, borderwidth=0, highlightthickness=0, highlightbackground= self.theme)
@@ -183,7 +192,7 @@ class CityCompassApp():
         self.uiCanvas.pack()
 
         # Create a label widget
-        self.logo = tk.Label(self.master, text="CityCompass", font=("Cascadia Mono SemiBold", 30, "bold"))
+        self.logo = tk.Label(self.master, text="ShelterSight", font=("Cascadia Mono SemiBold", 30, "bold"))
         self.logo.configure(fg= self.theme_bold, bg= self.theme)
         self.logo.place(x=20, y=20)
 
@@ -205,6 +214,14 @@ class CityCompassApp():
         self.chart_widget.place(x=480, y=10)  # Place the chart widget
         self.ax.xaxis.label.set_color(self.theme_bold)  # Set x-axis scale color to the theme color
         self.ax.yaxis.label.set_color(self.theme_bold)  # Set y-axis scale color to the theme color
+
+        # Correlation Grouping
+        self.corr_group = {11794: 4, 11798: 7, 11799: 7, 11815: 1, 11831: 7, 11871: 4, 11891: 7, 11895: 7, 11911: 6, 11971: 4, 12011: 0, 12053: 0, 12231: 0, 12251: 7, 12252: 2, 12254: 0, 12274: 3, 12291: 1, 12292: 1, 12471: 7, 12711: 7, 13451: 4, 13932: 3, 14051: 1, 14251: 7, 14571: 1, 14572: 1, 14631: 7, 14651: 4, 14671: 4, 14931: 7, 15111: 6, 15112: 6, 15171: 0, 15711: 5, 15811: 1, 15871: 1, 16111: 1, 16131: 5, 16151: 5, 16191: 1, 16192: 1, 16193: 1, 16194: 6, 16271: 1, 16311: 1, 16371: 4, 16671: 1, 16691: 1, 16891: 1, 16892: 1, 16911: 6, 17011: 1, 17012: 1, 17191: 6, 17211: 1, 17212: 1, 17691: 3, 17771: 6, 17772: 6, 17791: 6, 17811: 6}
+        
+        #Shortening the list of shelters to only viable shelters
+        for i in self.iso_data.copy():
+            if i not in self.corr_group:
+                del self.iso_data[i]
 
         #------------------Variables------------------#
         self.chosen_shell_list = []
@@ -278,7 +295,7 @@ class CityCompassApp():
         self.toronto_im = self.imStore.call(10)
         self.toronto_im_ = self.toronto_im
         self.toronto_logo = tk.Label(self.master, image = self.toronto_im_)
-        self.toronto_logo.place(x = 290, y = 20)
+        self.toronto_logo.place(x = 310, y = 20)
         self.toronto_logo.configure(fg= self.theme_bold, bg= self.theme)
 
 
@@ -470,6 +487,10 @@ class CityCompassApp():
         self.occu_rate_.place(x = 630, y = 435)
         self.occu_rate_.configure(fg= self.theme_bold, bg= self.theme)
 
+        self.select_model_lbl = tk.Label(self.master, text = "Select Model: ")
+        self.select_model_lbl.place(x = 720, y = 470)
+        self.select_model_lbl.configure(fg= self.theme_bold, bg= self.theme)
+
         #------------------Dropdown------------------#
         self.program_id_var = tk.StringVar()
         self.dropdown = ttk.Combobox(self.master, textvariable=self.program_id_var, state="readonly", style = "ComboboxStyle.TCombobox")
@@ -479,8 +500,14 @@ class CityCompassApp():
         self.program_id_2_var = tk.StringVar()
         self.prod_id_dropdown = ttk.Combobox(self.master, textvariable=self.program_id_2_var, state="readonly", style = "ComboboxStyle.TCombobox")
         self.prod_id_dropdown['values'] = self.chosen_shell_list
-        self.prod_id_dropdown.place(x = 150, y = 225)        
+        self.prod_id_dropdown.place(x = 150, y = 225)
         self.prod_id_dropdown.bind("<<ComboboxSelected>>", self.on_dropdown_select)
+
+        self.mod_chosen = tk.StringVar()
+        self.model_list = ttk.Combobox(self.master, textvariable = self.mod_chosen, state = "readonly", style = "ComboboxStyle.TCombobox")
+        self.model_list['values'] = ['Univariate LSTM', 'City wide Multivariate LSTM', 'Correlation Grouping LSTM']
+        self.model_list.place(x = 800, y = 470, width = 170)
+        self.model_list.bind("<<ComboboxSelected>>", self.mod_chosen_dropdown)
 
         #------------------Styling------------------#
         self.estyle = ttk.Style()
@@ -490,6 +517,25 @@ class CityCompassApp():
             fieldbackground = self.theme_fields
         )
 
+        self.change_data_and_title()
+
+    def mod_chosen_dropdown(self, event):
+        model = self.mod_hash[self.mod_chosen.get()]
+
+        for i in self.shelters_data:
+
+            df_use = self.iso_data[i]
+            if df_use['OCCUPANCY_RATE_ROOMS'].isna().all():
+                df_use = df_use.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
+            else:
+                df_use = df_use.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
+
+            if self.mod_chosen.get() == 'Univariate LSTM':
+                self.shelters_data[i] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 1, 60)]
+            if self.mod_chosen.get() == 'City wide Multivariate LSTM':
+                self.shelters_data[i] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 60, 60)]
+            if self.mod_chosen.get() == 'Correlation Grouping LSTM':
+                self.shelters_data[i] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 60, 60, [self.corr_group[i], max(self.corr_group.values()) + 1])]
         self.change_data_and_title()
 
     def download_data(self):
@@ -679,15 +725,26 @@ class CityCompassApp():
             self.prod_id_dropdown['values'] = self.chosen_shell_list
             if len(self.chosen_shell_list) > cur_len:
 
+                model = self.mod_hash[self.mod_chosen.get()]
+
                 #Pre-prep the data
                 df_use = self.iso_data[int(selected_program_id)]
                 if df_use['OCCUPANCY_RATE_ROOMS'].isna().all():
                     df_use = df_use.rename(columns = {'OCCUPANCY_RATE_BEDS': 'OCCUPIED_PERCENTAGE'})
                 else:
                     df_use = df_use.rename(columns = {'OCCUPANCY_RATE_ROOMS': 'OCCUPIED_PERCENTAGE'})
-                self.shelters_data[int(selected_program_id)] = [df_use, dl.infer_future_dates(df_use, self.model, 60, self.scaler)]
+
+                if self.mod_chosen.get() == 'Univariate LSTM':
+                    self.shelters_data[int(selected_program_id)] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 1, 60)]
+                if self.mod_chosen.get() == 'City wide Multivariate LSTM':
+                    self.shelters_data[int(selected_program_id)] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 60, 60)]
+                if self.mod_chosen.get() == 'Correlation Grouping LSTM':
+                    self.shelters_data[int(selected_program_id)] = [df_use, dl.infer_date_(model, df_use[['OCCUPANCY_DATE', 'OCCUPIED_PERCENTAGE']], self.scaler, 60, 60, [self.corr_group[int(selected_program_id)], max(self.corr_group.values()) + 1])]
+                    
+
+
 
 
 root = tk.Tk()
-app = CityCompassApp(root)
+app = ShelterSightApp(root)
 root.mainloop()
