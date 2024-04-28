@@ -3,6 +3,7 @@
 <br></br>
 
 <div align="center">
+    <a href="https://www.youtube.com/watch?v=-DDK9pMYjrk">
     <img src="https://img.youtube.com/vi/-DDK9pMYjrk/0.jpg" alt="DEMO VIDEO" style="width:55%;">
     <p>Click to watch the demo video</p>
   </a>
