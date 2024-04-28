@@ -612,12 +612,11 @@ class ShelterSightApp():
 
     def clear_all(self):
         self.clear_dates_fn()
-        for i in self.chosen_shell_list:
+        for i in self.chosen_shell_list.copy():
             self.chosen_shell_list.remove(i)
             self.shell_chosen_count_str.set(str(len(self.chosen_shell_list)))
             self.prod_id_dropdown['values'] = self.chosen_shell_list
         self.change_data_and_title()
-
 
     def remove_shelter(self):
         selected_program_id = self.program_id_2_var.get()
