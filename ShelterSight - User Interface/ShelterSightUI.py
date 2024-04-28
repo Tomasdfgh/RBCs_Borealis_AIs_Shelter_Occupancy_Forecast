@@ -611,10 +611,15 @@ class ShelterSightApp():
         self.end_date_str.set("")
 
     def clear_all(self):
-        print("Clear All")
+        self.clear_dates_fn()
+        for i in self.chosen_shell_list:
+            self.chosen_shell_list.remove(i)
+            self.shell_chosen_count_str.set(str(len(self.chosen_shell_list)))
+            self.prod_id_dropdown['values'] = self.chosen_shell_list
+        self.change_data_and_title()
+
 
     def remove_shelter(self):
-        print(self.chosen_shell_list)
         selected_program_id = self.program_id_2_var.get()
         if selected_program_id != "":
             try:
@@ -623,7 +628,6 @@ class ShelterSightApp():
                 self.prod_id_dropdown['values'] = self.chosen_shell_list
             except:
                 pass
-        print(self.chosen_shell_list)
 
 
     def change_graph_fn(self):
