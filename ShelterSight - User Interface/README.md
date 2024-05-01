@@ -4,7 +4,9 @@
 
 ## Shelter Sight User Interface
 ### Background
-As part of the process of creating the model, we have also built a prototype that uses the data that have collected from the city of Toronto and the models that we have built. The idea of the UI serves as a "final product" to our project and also as a proof-of-concept that our data and model is indeed applicable for practical applications.
+In our journey to create a reliable model, we've dedicated ourselves to crafting a prototype that leverages data collected from the city of Toronto, paired with our models. This user interface (UI) prototype isn't just the final output of our project; it also serves as an illustration of how our data and models can be put into practical use.
+
+This UI prototype represents the culmination of countless hours of research, development, and fine-tuning. It's a tangible manifestation of our commitment to delivering impactful solutions.
 
 ### Video Demonstration
 The video below provides a demonstration to how the software functions. We will also go over all the functionalities in this readme as well, but this video serves as an alternative way of understanding how ShelterSight works. 
@@ -16,4 +18,16 @@ The video below provides a demonstration to how the software functions. We will 
   </a>
 </div>
 
+### Shelter Selection
 
+In order to view any information about any shelters, you will have to select the program ID of the shelters in the dropdown of Shelter Selection. Once your shelter have been selected, click on the add button. The Selected Shelters count will increment by 1 when the shelter has been added.
+
+### Shelter Information
+
+### Remove and Reset Functionalities
+
+### Forecast Period
+
+### Change and View Graph, and Download Data
+
+### Output and Select Model
