@@ -50,6 +50,10 @@ Clicking on the view graph button, the graph that is currently present in the UI
 
 Download data will download the actual and predicted data of everysingle chosen shelter into your local drive as a .csv file. 
 
-### Output and Select Model
+### Output
 
-The Output is the section for you to indentify the actual numerical value of the occupancy rate of the chosen shelter. To target a shelter to identify the output, choose its corresponding Program ID in the Shelter Information's dropdown. 
+The Output is the section for you to indentify the actual numerical value of the occupancy rate of the chosen shelter. To target a shelter to identify the output, choose its corresponding Program ID in the Shelter Information's dropdown. Once a shelter and date has been selected, the actual numerical data and data type will appear. Data type is an indicator of whether the numerical value that is being displayed is the actual data from that shelter (as in data that has already passed) or predicted data for that shelter from the model.
+
+### Select Model
+
+We have implemented different types of LSTM models. You may explore them in the LSTM folder of this repository. You may also choose to see the inferred data from different LSTM implementations. Models included are the Univariate LSTM ([1] jupyter notebook script in the LSTM section), City-wide Multivariate LSTM ([2] jupyter notebook script), and Correlation Grouping LSTM ([3] jupyter notebook script). Every functionalities mentioned above will work the same way, the difference is that the data wil be passed into a different model.
