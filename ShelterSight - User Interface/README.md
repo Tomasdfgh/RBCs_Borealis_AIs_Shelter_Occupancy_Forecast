@@ -24,7 +24,7 @@ In order to view any information about any shelters, you will have to select the
 
 ### Shelter Information
 
-This section will display the information of the shelters that you have selected. Click on the Program ID's dropdown, and the options available are the Program IDs of all the shelters that you have selected. Once you clicked on any of the Program IDs, its information will show up in the rest of the sections. Infomration that is viewable in this section incldues the Organization name, Shelter Group, Location Name, Location Address, Postal Code, and Capacity Type. This section is important as the chosen shelter will be the shelter displayed in the "Output" section and the second graph type as well (more information on that in the "Change and View Graph" section.
+This section will display the information of the shelters that you have selected. Click on the Program ID's dropdown, and the options available are the Program IDs of all the shelters that you have selected. Once you clicked on any of the Program IDs, its information will show up in the rest of the sections. Information that is viewable in this section incldues the Organization name, Shelter Group, Location Name, Location Address, Postal Code, and Capacity Type. This section is important as the chosen shelter will be the shelter displayed in the "Output" section and the second graph type as well (more information on that in the "Change and View Graph" section.
 
 ### Remove and Reset Functionalities
 
@@ -36,4 +36,20 @@ Forecast Period is a functionality for the user to choose a specific window of t
 
 ### Change and View Graph, and Download Data
 
+This section covers three different functionalities that are related to the graph and data: Change Graph Type, View Graph, and download data. These three functionalties can be activated by clicking on three different buttons with their corresponding name and symbol.
+
+#### Change Graph Type
+
+You can select multiple shelters to view on the graph; therefore, the graph can become populated with too many different shelters. As a result, you have the option to target specific shelters through the Change Graph Type functionalities. You may target specific shelters by clicking on the shelter's Program ID in the Shelter Information dropdown. To target a different shelter, choose their respective Program ID in the same dropdown, then click on Forecast again.
+
+#### View Graph
+
+Clicking on the view graph button, the graph that is currently present in the UI will popout. From the popup graph, you can adjust the size of the graph to view it at different dimensions, and you can also download the graph to your local drive.
+
+#### Download Data
+
+Download data will download the actual and predicted data of everysingle chosen shelter into your local drive as a .csv file. 
+
 ### Output and Select Model
+
+The Output is the section for you to indentify the actual numerical value of the occupancy rate of the chosen shelter. To target a shelter to identify the output, choose its corresponding Program ID in the Shelter Information's dropdown. 
