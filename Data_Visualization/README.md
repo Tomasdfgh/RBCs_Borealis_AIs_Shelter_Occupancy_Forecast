@@ -1,3 +1,5 @@
+<img width="1437" alt="Screenshot 2024-04-24 at 6 30 50 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/2f893bee-4825-437b-9fda-5dacf9281ac7">
+
 # Data Visualization
 ## Overview
 This repository contains several data visualization files that serve as essential tools for exploring and understanding the underlying trends and patterns within our dataset. Each visualization is crafted to provide insights into different aspects of shelter usage, such as occupancy rates, demographic distributions, and seasonal variations. Visualizations simplify complex data, making it easier to identify and communicate key findings and trends, and help highlight correlations and anomalies that might not be apparent from raw data alone.
