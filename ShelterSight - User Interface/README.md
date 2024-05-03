@@ -1,7 +1,5 @@
 <img width="1437" alt="Screenshot 2024-04-24 at 6 30 50 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/2f893bee-4825-437b-9fda-5dacf9281ac7">
 
-<br></br>
-
 # Shelter Sight User Interface
 ## Background
 In our journey to create a reliable model, we've dedicated ourselves to crafting a prototype that leverages data collected from the city of Toronto, paired with our models. This user interface (UI) prototype isn't just the final output of our project; it also serves as an illustration of how our data and models can be put into practical use.
