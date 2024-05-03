@@ -24,9 +24,15 @@ In order to view any information about any shelters, you will have to select the
 
 ### Shelter Information
 
+This section will display the information of the shelters that you have selected. Click on the Program ID's dropdown, and the options available are the Program IDs of all the shelters that you have selected. Once you clicked on any of the Program IDs, its information will show up in the rest of the sections. Infomration that is viewable in this section incldues the Organization name, Shelter Group, Location Name, Location Address, Postal Code, and Capacity Type. This section is important as the chosen shelter will be the shelter displayed in the "Output" section and the second graph type as well (more information on that in the "Change and View Graph" section.
+
 ### Remove and Reset Functionalities
 
+To remove a shelter that you have chosen in the Shelter Selection section, you can select that shelter in the Shelter Information's dropdown and click the remove button. That will remove the singular shelter that you have selected and decrease the selected shelters count by 1. You also have the option to reset everything by clicking on the reset button. This will clear all selected shelters and the graph and the Forecast Period dates.
+
 ### Forecast Period
+
+Forecast Period is a functionality for the user to choose a specific window of time to look at in the graph. When you have chosen your shelters without a forecast period, you can view every bit of data that is available (which includes all the actual data that has come to pass of every shelters and also their predicted data for the next 60 days as well). When you click on Open Calender for the Forecast Period, a popup will appear with two calendars: one for the start of the window, and one for the end. Once the two dates have been selected, you can click on forecast again, and the graph will shrink to the window that you have selected.
 
 ### Change and View Graph, and Download Data
 
