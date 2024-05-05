@@ -8,6 +8,7 @@ This repository contains several data visualization files that serve as essentia
 * Daily Shelter Occupancy: https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/
 * Weather: https://climate.weather.gc.ca/historical_data/search_historic_data_e.html
 * Available low-cost housing: https://open.canada.ca/data/en/dataset/324befd1-893b-42e6-bece-6d30af3dd9f1
+* Persons in Crisis Calls: https://data.torontopolice.on.ca/datasets/79c8e950bfe54ce39334ba108e1b325f_0/explore
 
 ## Understanding Trends
 In the data_trends.ipynb notebook, we use data visualizations to uncover and understand the underlying patterns and trends. Each visualization serves as a window into the data, highlighting essential trends over the past few years. The image below shows examples of these charts.
