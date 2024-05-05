@@ -1,3 +1,6 @@
+<img width="1437" alt="Screenshot 2024-04-24 at 6 30 50 PM" src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/105636722/2f893bee-4825-437b-9fda-5dacf9281ac7">
+
+
 # Baseline Models
 
 In this section, we outline the baseline models we used to evaluate the performance of our proposed model. These baselines were carefully selected to ensure a robust evaluation of our proposed methodology. We will describe the process behind each baseline model, detail their implementation, and outline the results. We will also show a comparative analysis of the performance of all the baseline models. This comprehensive benchmarking provides a clear context for assessing the strengths and potential improvements of our proposed solution.
