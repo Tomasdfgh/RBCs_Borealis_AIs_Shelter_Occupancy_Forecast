@@ -79,3 +79,41 @@ Similarly to the univariate lstm, we will get the model to infer the last 60 day
   <br>
   <em>Figure 7: City wide Multivariate LSTM model Inference on random shelters</em>
 </p>
+
+## Geo-spatial Multivariate LSTM: Distortions
+
+While the two LSTMs implementations mentioned above has acceptable performance, it does not perform well when inferring occupancy rates for individual shelters. That is expected due to the fact both models are trained on a city wide average dataset instead of the individual shelter's data. The rest of the implementations will now train the model on individual shelter's data. The difficulty here is that to train the model on individual shelter's data, we will have to encode the data. With 62 viable shelters, the data frame will now contain 62 extra features mostly containing 0's. This will undoubtedly cause overfitting. As a result, the first objective is to come up with a strategy to reduce the extra features in the dataframe. To do that, we can group the shelters through a specific grouping schematic. For this implementation, we will group the shelter based on their location through distortions analysis. We will run k-means with 2 to 9 centroids and find their corresponding distortions. We can then pick the right centroids to use using the "elbow rule" where the number of centroids chosen is at the elbow of the distortions curve.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/41af818a-0137-4a71-aa10-1a71e0b93ba9" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 7: Map of the Shelters in Toronto in a 2d Grid</em>
+</p>
+
+The first step to do is to map the shelters on a 2d Grid. Using this grid, we can run k-means algorithm on it. As a reference, here are the same shelters in a Toronto map. From visual inspection, it is obvious that the plot above is simply the shelters from the Toronto map translated into a plot. 
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/0f00a9cb-e8c0-401c-bf96-1378ea10f45a" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 8: Map of individual shelters in Toronto</em>
+</p>
+
+### Distortion Analysis
+
+Running k-means 8 times with 2 to 9 centroids on the shelters location grid will yield us the distortion curve below. From this curve, the "elbow" of the curve belongs to 4 centroids. As a result, we will pick that as our grouping schematic to encode our data.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/4cf2a932-675c-4ea8-a1c4-1d85a326dee9" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 9: Distortion curve with 2 to 9 centroids</em>
+</p>
+
+### Grouping Strategy
+
+With 4 centroids selected, the shelters will be divided into 4 different regions. Similar to 4 different neighborhoods, every shelters in any neighbourhood will share the same encoding. As a result, the dataframe will now contain 4 extra dimensions for the encoder instead of 62. The 4 neighbourhoods are displayed below.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/70299e69-dde8-4f20-a51b-884787f8561c" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 10: Distortion grouping neighbourhoods</em>
+</p>
