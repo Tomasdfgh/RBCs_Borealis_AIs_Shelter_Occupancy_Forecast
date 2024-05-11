@@ -110,10 +110,70 @@ Running k-means 8 times with 2 to 9 centroids on the shelters location grid will
 
 ### Grouping Strategy
 
-With 4 centroids selected, the shelters will be divided into 4 different regions. Similar to 4 different neighborhoods, every shelters in any neighbourhood will share the same encoding. As a result, the dataframe will now contain 4 extra dimensions for the encoder instead of 62. The 4 neighbourhoods are displayed below.
+With 4 centroids selected, the shelters will be divided into 4 different regions. Similar to 4 different neighborhoods, every shelter in any neighbourhood will share the same encoding. As a result, the dataframe will now contain 4 extra dimensions for the encoder instead of 62. The 4 neighbourhoods are displayed below.
 
 <p align="center">
   <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/70299e69-dde8-4f20-a51b-884787f8561c" width="550" alt="chessBoard">
   <br>
   <em>Figure 10: Distortion grouping neighbourhoods</em>
+</p>
+
+### Training Result
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/e5cee899-2bc8-427a-ab0f-0476a8d38644" width="950" alt="chessBoard">
+  <br>
+  <em>Figure 11: Training and Validation Loss for Distortion Grouping LSTM Model</em>
+</p>
+
+
+### Random Shelter Inference
+
+When asked to infer random shelters, this model performs significantly better.
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/8bda6923-d123-41ed-acc5-7dc322f919e8" width="950" alt="chessBoard">
+  <br>
+  <em>Figure 12: Distortion Grouping LSTM model Inference on random shelters</em>
+</p>
+
+## Geo-spatial Multivariate LSTM: Correlation
+
+The last LSTM implementation looks at correlation instead of distortions. This implementation is the same as the distortion one where k-means is run 8 times with 2 to 9 centroids; however, we will now judge which centroids result in the shelters sharing the highest correlation.
+
+### Correlation Analysis
+
+Running k-means 8 times with 2 to 9 centroids on the shelters location grid will yield us the correlation graph below. We have also included the distortions on top of that to show the two together. The centroids with the highest correlation is 8 centroids; therefore, we will pick 8 as the number of neighbourhoods to divide ours shelters into.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/f3671e2c-3829-487a-b08a-148f6733fac5" width="750" alt="chessBoard">
+  <br>
+  <em>Figure 13: Correlation bar graph with 2 to 9 centroids</em>
+</p>
+
+### Grouping Strategy
+
+With 8 centroids selected, the shelters will be divided into 8 different regions. Similar to the implementation above, each shelter in any neighbourhood will share the same encoding. As a result, the dataframe will now contain 8 extra dimensions for the encoder instead of 62. The 8 neighbourhoods are displayed below.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/6637b294-3967-4063-93f4-fbd1063b011a" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 14: Correlation grouping neighbourhoods</em>
+</p>
+
+### Training Result
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/e7d80195-7067-4532-be6f-1cce72527007" width="950" alt="chessBoard">
+  <br>
+  <em>Figure 15: Training and Validation Loss for Correlation Grouping LSTM Model</em>
+</p>
+
+### Random Shelter Inference
+
+Similar to the distortion grouping lstm, correlation grouping model performs incredibly well when inferencing individual shelters.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/2bc50a79-d864-4a29-b924-e69c0d7a5754" width="950" alt="chessBoard">
+  <br>
+  <em>Figure 16: Correlation Grouping LSTM model Inference on random shelters</em>
 </p>
