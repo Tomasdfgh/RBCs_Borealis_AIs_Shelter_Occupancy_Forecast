@@ -177,3 +177,35 @@ Similar to the distortion grouping lstm, correlation grouping model performs inc
   <br>
   <em>Figure 16: Correlation Grouping LSTM model Inference on random shelters</em>
 </p>
+
+## Best Feature for Each Implementation
+
+From the 4 features that we have selected by running our feature importance analysis, we can now begin to test the models and determine which set of features performs the best for which model implementation. The testing and result can be found in the Model Implementation Testing script of this folder.
+
+### Best Set of Features For City Wide Data Multivariate LSTM
+The best features for the city wide data multivariate lstm are 'OCCUPANCY_DATE', 'VALUE', 'Min Temp (Â°C)', 'OCCUPIED_PERCENTAGE'. 
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/70a29a34-f0de-48f5-9fde-d2cc3a485019" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 17: Losses for all models using best feature set for city wide data multivariate lstm</em>
+</p>
+
+### Best Set of Features For Geolocation Grouping LSTM Using Distortions Analysis
+The best features for the Geolocation Grouping LSTM using distortions analysis are 'OCCUPANCY_DATE', 'VALUE', 'Max Temp (Â°C)', 'Min Temp (Â°C)', 'OCCUPIED_PERCENTAGE'.
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/0a057978-a1c3-4883-ae36-b951b1fc2b04" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 18: Losses for all models using best feature set for Geolocation Grouping LSTM Using Distortions Analysis</em>
+</p>
+
+### Best Set of Features For Geolocation Grouping LSTM Using Correlation Analysis
+The best features for the Geolocation Grouping LSTM Using Correlation Analysis are 'OCCUPANCY_DATE', 'VALUE', 'Snow on Grnd (cm)', 'Max Temp (Â°C)', 'Min Temp (Â°C)', 'OCCUPIED_PERCENTAGE'.
+
+
+<p align="center">
+  <img src="https://github.com/Tomasdfgh/RBCs_Borealis_AIs_Shelter_Occupancy_Forecast/assets/86145397/d01e6cd7-641f-43f2-9e45-be552b5b46be" width="550" alt="chessBoard">
+  <br>
+  <em>Figure 19: Losses for all models using best feature set for Geolocation Grouping LSTM Using Correlation Analysis</em>
+</p>
